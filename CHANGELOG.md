@@ -11,6 +11,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 - The npm installation script now automatically installs `uv` with the
   official installer when it is not already available.
+- Release builds now publish the npm package from GitHub Actions through the
+  npm trusted-publisher environment.
 
 ## [0.1.1] - 2026-09-01
 

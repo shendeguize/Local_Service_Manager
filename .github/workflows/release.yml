@@ -82,16 +82,12 @@ jobs:
           path: dist/
           if-no-files-found: error
 
-  publish:
+  publish-github-release:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment:
-      name: pypi
-      url: https://pypi.org/p/local-sm
     permissions:
       contents: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -105,6 +101,25 @@ jobs:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           files: dist/*
           generate_release_notes: true
+
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/@shendeguize/local-sm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist
       - name: Bundle Python wheel into npm package
         run: |
           rm -rf packages/npm/wheel
