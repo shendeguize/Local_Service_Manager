@@ -13,6 +13,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
   every `npx @shendeguize/local-sm` call failed; it now uses `uv tool run`.
 - Local npm publishes are pinned to registry.npmjs.org via `publishConfig`
   so mirror registries configured in `~/.npmrc` are never targeted.
+- The npm package now bundles the matching LocalSM wheel, so npm installation
+  no longer depends on LocalSM being published to PyPI.
 
 ## [0.1.0] - 2026-09-01
 
