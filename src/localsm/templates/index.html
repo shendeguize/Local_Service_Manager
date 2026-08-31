@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7fb">
+  <title>LocalSM · Local Service Manager</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 9 3 3-3 3m5 0h5"/></svg></div>
+        <div><p class="eyebrow">Local Service Manager</p><h1>LocalSM</h1><p class="subtitle">本机服务与远端 SSH 资源控制台</p></div>
+      </div>
+      <div class="top-actions">
+        <label class="switch" title="每 5 秒刷新服务与隧道"><input id="auto-refresh" type="checkbox" checked><span class="switch-track"><span class="switch-thumb"></span></span>自动刷新</label>
+        <button id="refresh-all" class="button" type="button" title="刷新全部数据"></button>
+        <button id="theme-toggle" class="icon-button" type="button" title="切换主题" aria-label="切换主题"></button>
+      </div>
+    </header>
+
+    <section class="overview" aria-label="概览">
+      <div class="metric"><div class="metric-label">运行中服务</div><div id="metric-running" class="metric-value">—</div><div id="metric-running-detail" class="metric-detail">等待数据</div></div>
+      <div class="metric"><div class="metric-label">服务总数</div><div id="metric-total" class="metric-value">—</div><div class="metric-detail">本机配置</div></div>
+      <div class="metric"><div class="metric-label">远端 Host</div><div id="metric-reachable" class="metric-value">—</div><div id="metric-reachable-detail" class="metric-detail">尚未扫描</div></div>
+      <div class="metric"><div class="metric-label">SSH 隧道</div><div id="metric-tunnels" class="metric-value">—</div><div id="metric-tunnels-detail" class="metric-detail">配置规则</div></div>
+    </section>
+
+    <section class="panel" aria-labelledby="services-title">
+      <div class="panel-header">
+        <div class="panel-title"><span class="panel-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="6" rx="1"/><rect x="4" y="14" width="16" height="6" rx="1"/><path d="M8 7h.01M8 17h.01"/></svg></span><div><h2 id="services-title">本机服务</h2><p class="panel-caption">统一拉起、重启、分配端口，并查看每个进程的实时日志</p></div></div>
+      </div>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>服务</th><th>状态</th><th>PID</th><th>端口</th><th>访问地址</th><th>操作</th></tr></thead><tbody id="services-body"></tbody></table></div>
+    </section>
+
+    <section class="panel" aria-labelledby="remote-title">
+      <div class="panel-header">
+        <div class="panel-title"><span class="panel-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.2 2.4 3.3 5.4 3.3 9S14.2 19.6 12 21c-2.2-1.4-3.3-5.4-3.3-9S9.8 5.4 12 3Z"/></svg></span><div><h2 id="remote-title">远端监听</h2><p id="scan-meta" class="panel-caption">尚未扫描 SSH config 中的主机</p></div></div>
+        <div class="panel-actions"><button id="scan-remote" class="button primary" type="button"></button></div>
+      </div>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>SSH Host</th><th>连通性</th><th>监听端口</th><th>隧道覆盖</th><th>操作</th></tr></thead><tbody id="remote-body"></tbody></table></div>
+    </section>
+
+    <section class="panel" aria-labelledby="tunnels-title">
+      <div class="panel-header">
+        <div class="panel-title"><span class="panel-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.1.1l1.4-1.4a5 5 0 0 0-7.1-7.1L10.6 5.4"/><path d="M14 11a5 5 0 0 0-7.1-.1l-1.4 1.4a5 5 0 0 0 7.1 7.1l.8-.8"/></svg></span><div><h2 id="tunnels-title">SSH 隧道</h2><p class="panel-caption">显式管理本地端口到远端服务的转发规则，不改写 ~/.ssh/config</p></div></div>
+        <div class="panel-actions"><button id="ensure-tunnels" class="button" type="button"></button><button id="add-tunnel" class="button primary" type="button"></button></div>
+      </div>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>名称</th><th>SSH Host</th><th>端口映射</th><th>状态</th><th>操作</th></tr></thead><tbody id="tunnels-body"></tbody></table></div>
+    </section>
+  </main>
+  <div id="modal-root" class="modal-backdrop" hidden></div>
+  <div id="drawer-root" class="drawer" hidden></div>
+  <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
+  <script type="module" src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

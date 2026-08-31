@@ -1,0 +1,12 @@
+state/*
+!state/.gitkeep
+state/logs/*
+!state/logs/.gitkeep
+.local/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
