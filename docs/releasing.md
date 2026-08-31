@@ -3,7 +3,8 @@
 This repository publishes the Python distribution `local-sm`, a GitHub
 Release, and the npm launcher `@shendeguize/local-sm` from the same
 version tag. The release workflow uses GitHub OIDC; no PyPI or npm token is
-stored in the repository.
+stored in the repository. PyPI publishing is optional until its publisher is
+configured.
 
 ## One-time publisher setup
 
@@ -32,7 +33,9 @@ desired.
 4. The **Tag release** workflow creates `vX.Y.Z` on the merged version.
 5. The **Release** workflow validates the tag, verifies that it points to a
    commit reachable from `main`, builds the wheel and sdist, creates the
-   GitHub Release, and publishes to PyPI and npm.
+   GitHub Release, and publishes the npm wrapper. PyPI remains skipped for tag
+   pushes; after configuring its publisher, run the workflow manually with
+   `publish_pypi` enabled.
 6. Verify the public installations:
 
 ```sh
