@@ -8,30 +8,42 @@ stored in the repository. PyPI publishing remains optional.
 
 ## One-time publisher setup
 
-Before the first npm release, configure npm:
+Before the first automated npm release, configure npm. A trusted publisher can
+only be attached to a package that already exists on the registry, so the very
+first version of a new package has to be published manually once:
 
-1. On npmjs.com, configure the package
-   `@shendeguize/local-sm` to trust GitHub Actions for the same owner,
-   repository, and workflow filename. The package scope must be allowed to
-   publish publicly. npm Trusted Publishing requires npm CLI 11.5.1+ and
-   Node 22.14.0+; the workflow uses Node 24.
+```sh
+make package-npm
+npm publish ./packages/npm --access public
+```
 
-The GitHub repository must also allow Actions to create tags and releases.
-Configure the `npm` environment for the npm trusted publisher. Configure the
-`pypi` environment only if PyPI publishing is enabled later.
+Then attach GitHub Actions as the trusted publisher for
+`@shendeguize/local-sm`, either on npmjs.com or with `npm trust github`. Use
+this repository's owner and name, workflow filename `release.yml`, and
+environment `npm`, and grant the publish permission. The scope must be allowed
+to publish publicly. `npm trust` requires npm CLI 11.10+ and account-level 2FA;
+the release workflow itself runs Node 24.
+
+On the GitHub side, the repository needs the `npm` environment, permission for
+Actions to create tags and releases, and permission for Actions to create pull
+requests (used by the release preparation workflow). Configure the `pypi`
+environment only if PyPI publishing is enabled later.
 
 ## Release process
 
 1. Run the **Release preparation** workflow with the next stable version.
 2. Review the generated branch and fill in the new `CHANGELOG.md` entry.
 3. Run `make release-preflight` locally and merge the pull request.
-4. The **Tag release** workflow creates `vX.Y.Z` on the merged version.
+4. The **Tag release** workflow creates `vX.Y.Z` on the merged version and then
+   dispatches the release workflow. A tag pushed with `GITHUB_TOKEN` does not
+   raise a push event, so this explicit dispatch is what keeps the chain
+   connected.
 5. The **Release** workflow validates the tag, verifies that it points to a
-   commit reachable from `main`, builds the wheel and sdist, creates the
-   GitHub Release, embeds the wheel in the npm package, and publishes npm
-   through the `npm` environment. No local `npm publish` is required. PyPI
-   remains skipped for tag pushes; after configuring its publisher, run the
-   workflow manually with `publish_pypi` enabled.
+   commit reachable from `main`, builds the wheel and sdist from the tag,
+   creates the GitHub Release, embeds the wheel in the npm package, and
+   publishes npm through the `npm` environment. No local `npm publish` is
+   required. PyPI remains skipped unless the workflow is run manually with
+   `publish_pypi` enabled.
 6. Verify the public installation:
 
 ```sh
