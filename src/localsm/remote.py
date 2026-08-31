@@ -9,8 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from .config import STATE_DIR, ensure_directories
-from .config import TUNNELS_FILE, load_tunnels
+from .config import STATE_DIR, TUNNELS_FILE, ensure_directories, load_tunnels
 
 REMOTE_PORT_COMMAND = (
     "if command -v ss >/dev/null 2>&1; then "
@@ -21,10 +20,10 @@ REMOTE_PORT_COMMAND = (
     "netstat -lnt; "
     "elif command -v python3 >/dev/null 2>&1; then "
     "python3 -c 'import pathlib; "
-    "files=(pathlib.Path(\"/proc/net/tcp\"), pathlib.Path(\"/proc/net/tcp6\")); "
-    "print(\"\\n\".join(str(int(line.split()[1].rsplit(\":\",1)[1],16)) "
+    'files=(pathlib.Path("/proc/net/tcp"), pathlib.Path("/proc/net/tcp6")); '
+    'print("\\n".join(str(int(line.split()[1].rsplit(":",1)[1],16)) '
     "for f in files if f.exists() for line in f.read_text().splitlines()[1:] "
-    "if len(line.split()) > 3 and line.split()[3] == \"0A\"))'; "
+    'if len(line.split()) > 3 and line.split()[3] == "0A"))\'; '
     "else echo 'LocalSM: neither ss, lsof, netstat, nor python3 is installed' >&2; exit 127; fi"
 )
 

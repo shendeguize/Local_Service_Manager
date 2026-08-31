@@ -12,7 +12,7 @@ def test_ghostty_and_terminal_commands(monkeypatch):
         stderr = ""
 
     monkeypatch.setattr(terminal.subprocess, "Popen", lambda *args, **kwargs: calls.append(("Popen", args)))
-    monkeypatch.setattr(terminal.subprocess, "run", lambda *args, **kwargs: (calls.append(("run", args)) or Result()))
+    monkeypatch.setattr(terminal.subprocess, "run", lambda *args, **kwargs: calls.append(("run", args)) or Result())
     launch_ssh("pod-a", "ghostty")
     launch_ssh("pod-a", "terminal")
     assert calls[0][1][0] == ["open", "-na", "Ghostty", "--args", "-e", "ssh", "pod-a"]

@@ -14,12 +14,23 @@ LocalSM 没有常驻 supervisor：服务以 detached 进程运行，用 pidfile�
 需要 Python 3.12+ 和 [uv](https://docs.astral.sh/uv/)：
 
 ```sh
-cd Helpers/local_service_manager
 uv tool install --editable . --force
 LocalSM --version
 ```
 
 editable 安装会让全局命令继续使用仓库内的 `config/` 和 `state/`。
+
+### npm 启动器
+
+如果已安装 `uv`，也可以通过 npm 启动器运行已发布的 Python CLI：
+
+```sh
+npx @shendeguize/local-sm --version
+```
+
+该 npm 包是轻量包装器，不会捆绑 Python；完整说明见
+[`packages/npm/README.md`](packages/npm/README.md)。
+版本发布流程见 [`docs/releasing.md`](docs/releasing.md)。
 
 ### 项目内使用
 
@@ -138,8 +149,11 @@ make smoke         # 全量真实服务验收，可能改变服务状态
 全量真实验收；它会尽力恢复 dshc 的原端口和 launchd 状态。执行前请确认
 当前服务状态允许被重启。
 
+README.md 与 README.en.md 的上述一级章节需要保持同步；新增用户可见功能
+时请同时更新两份文档。CI 会检查章节结构和本地链接。
+
 ## 路线图
 
-- npm 分发产物：预留为后续工作，不在当前 Python/uv 版本中引入 Node 构建链。
+- npm 启动器：已提供 `@shendeguize/local-sm`，依赖用户侧安装的 `uv`。
 - launchd 原生服务模板：当前只管理 detached 进程，后续可按服务选择系统托管。
 - 远端扫描结果 diff 与通知：当前提供按需扫描和缓存。

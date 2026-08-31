@@ -1,0 +1,33 @@
+name: Tag release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - src/localsm/__init__.py
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create version tag when needed
+        shell: bash
+        run: |
+          VERSION="$(python -c 'import re; print(re.search(r"^__version__\s*=\s*\"([^\"]+)\"$", open("src/localsm/__init__.py").read(), re.MULTILINE).group(1))')"
+          TAG="v${VERSION}"
+          if git rev-parse "$TAG^{commit}" >/dev/null 2>&1; then
+            echo "$TAG already exists"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"

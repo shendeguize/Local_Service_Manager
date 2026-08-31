@@ -7,7 +7,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from .config import STATE_DIR, SERVICES_FILE, TUNNELS_FILE, ConfigError, ensure_directories, load_services, load_tunnels
+from .config import STATE_DIR, TUNNELS_FILE, ConfigError, ensure_directories, load_services, load_tunnels
 from .remote import scan_hosts
 
 

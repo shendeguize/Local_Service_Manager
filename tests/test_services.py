@@ -11,7 +11,7 @@ from localsm.services import ServiceError, ServiceManager
 def manager(tmp_path, monkeypatch):
     for module in (config, logs, ports, services):
         monkeypatch.setattr(module, "STATE_DIR", tmp_path)
-    definition = ServiceConfig("demo", f"{sys.executable} -c \"import time; time.sleep(30)\"", preferred_port=18150)
+    definition = ServiceConfig("demo", f'{sys.executable} -c "import time; time.sleep(30)"', preferred_port=18150)
     return ServiceManager({"demo": definition}, (18150, 18160))
 
 

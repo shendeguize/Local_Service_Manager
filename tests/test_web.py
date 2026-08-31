@@ -1,4 +1,8 @@
+import pytest
+
 from localsm import web
+
+pytestmark = pytest.mark.integration
 
 
 def test_dashboard_and_read_endpoints():
@@ -29,3 +33,13 @@ def test_web_ssh_endpoint(monkeypatch):
     response = web.create_app().test_client().post("/api/ssh/pod-a", json={"app": "terminal"})
     assert response.status_code == 200
     assert calls == [("pod-a", "terminal")]
+
+
+def test_web_converts_local_errors_to_bad_request(monkeypatch):
+    def fail(self, name, requested_port=None, auto_port=False):
+        raise web.ServiceError("service is unavailable")
+
+    monkeypatch.setattr(web.ServiceManager, "up", fail)
+    response = web.create_app().test_client().post("/api/services/web/up")
+    assert response.status_code == 400
+    assert response.get_json() == {"error": "service is unavailable"}

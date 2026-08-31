@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 
 from localsm import cli
@@ -37,3 +39,24 @@ def test_ssh_command_delegates(monkeypatch, capsys):
     assert cli.main(["ssh", "pod-a", "--app", "terminal"]) == 0
     assert calls == [("pod-a", "terminal")]
     assert "launched terminal" in capsys.readouterr().out
+
+
+def test_service_error_is_reported(monkeypatch, capsys):
+    class FailingManager:
+        services = {"demo": object()}
+
+        def up(self, name, requested_port=None, auto_port=False):
+            raise cli.ServiceError(f"cannot start {name}")
+
+    monkeypatch.setattr(cli, "ServiceManager", FailingManager)
+    assert cli.main(["up", "demo"]) == 1
+    assert "LocalSM error: cannot start demo" in capsys.readouterr().err
+
+
+def test_main_returns_two_for_unhandled_command_branch(monkeypatch):
+    class Parser:
+        def parse_args(self, argv):
+            return SimpleNamespace(command="unexpected")
+
+    monkeypatch.setattr(cli, "build_parser", lambda: Parser())
+    assert cli.main([]) == 2

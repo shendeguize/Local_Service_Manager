@@ -16,13 +16,25 @@ the services it started.
 You need Python 3.12+ and [uv](https://docs.astral.sh/uv/):
 
 ```sh
-cd Helpers/local_service_manager
 uv tool install --editable . --force
 LocalSM --version
 ```
 
 Editable installation keeps the global command pointed at the repository's
 `config/` and `state/` directories.
+
+### npm launcher
+
+With `uv` installed, you can also run the published Python CLI through the npm
+launcher:
+
+```sh
+npx @shendeguize/local-sm --version
+```
+
+The npm package is a thin wrapper and does not bundle Python. See
+[`packages/npm/README.md`](packages/npm/README.md) for details.
+See [`docs/releasing.md`](docs/releasing.md) for the release process.
 
 ### Run from the project
 
@@ -126,10 +138,14 @@ Hermetic tests do not connect to real SSH hosts or start real service CLIs.
 services. It records and attempts to restore dshc's original port and launchd
 state.
 
+The paired top-level sections in README.md and README.en.md must stay in sync.
+Update both files for user-visible features; CI checks their section structure
+and local links.
+
 ## Roadmap
 
-- npm distribution artifacts: reserved for a future release; the current
-  implementation intentionally has no Node build chain.
+- npm launcher: available as `@shendeguize/local-sm` and requires `uv` on the
+  user's machine.
 - Native launchd templates: detached processes are supported today; per-service
   system management can be added later.
 - Remote listener diffs and notifications: currently scans and caches on demand.

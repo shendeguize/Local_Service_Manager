@@ -1,12 +1,11 @@
-from pathlib import Path
-
 from localsm import remote
 from localsm.remote import RemoteScan, SSHHost
 
 
 def test_parse_ssh_config_skips_wildcards(tmp_path):
     path = tmp_path / "config"
-    path.write_text("""
+    path.write_text(
+        """
 Host *
   User ignored
 Host pod-a pod-b
@@ -15,7 +14,9 @@ Host pod-a pod-b
   User caros
 Host wild-*
   HostName ignored
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
     hosts = remote.parse_ssh_config(path)
     assert [item.alias for item in hosts] == ["pod-a", "pod-b"]
     assert hosts[0].hostname == "10.0.0.2"
@@ -43,10 +44,34 @@ def test_unknown_host_is_reported(tmp_path, monkeypatch):
     monkeypatch.setattr(remote, "parse_ssh_config", lambda: [])
     monkeypatch.setattr(remote, "STATE_DIR", tmp_path)
     result = remote.scan_hosts(["missing"])
-    assert result == [{
-        "host": "missing",
-        "reachable": False,
-        "ports": [],
-        "error": "host not found in ssh config",
-        "tunnels": {},
-    }]
+    assert result == [
+        {
+            "host": "missing",
+            "reachable": False,
+            "ports": [],
+            "error": "host not found in ssh config",
+            "tunnels": {},
+        }
+    ]
+
+
+def test_scan_one_handles_ssh_startup_failure(monkeypatch):
+    def fail(*args, **kwargs):
+        raise FileNotFoundError("ssh missing")
+
+    monkeypatch.setattr(remote.subprocess, "run", fail)
+    result = remote._scan_one(SSHHost("pod-a"))
+    assert result == RemoteScan("pod-a", False, [], "ssh missing")
+
+
+def test_scan_one_reports_non_network_failure(monkeypatch):
+    class Result:
+        returncode = 1
+        stdout = ""
+        stderr = "host key verification failed"
+
+    monkeypatch.setattr(remote.subprocess, "run", lambda *args, **kwargs: Result())
+    result = remote._scan_one(SSHHost("pod-a"))
+    assert result.host == "pod-a"
+    assert result.reachable is True
+    assert result.error == "host key verification failed"

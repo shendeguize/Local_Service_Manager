@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from flask import Flask, jsonify, render_template, request
@@ -56,7 +56,7 @@ def create_app() -> Flask:
         path = STATE_DIR / "remote_scan.json"
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
-            scanned_at = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat()
+            scanned_at = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC).isoformat()
             return jsonify({"scanned_at": scanned_at, "results": payload})
         except (OSError, ValueError):
             return jsonify({"scanned_at": None, "results": []})

@@ -7,7 +7,7 @@ import json
 import sys
 
 from . import __version__
-from .config import STATE_DIR, CONFIG_DIR, TUNNELS_FILE, SERVICES_FILE, load_services, load_tunnels
+from .config import CONFIG_DIR, SERVICES_FILE, STATE_DIR, TUNNELS_FILE, load_services, load_tunnels
 from .doctor import print_report, run_doctor
 from .remote import scan_hosts
 from .services import ServiceError, ServiceManager
