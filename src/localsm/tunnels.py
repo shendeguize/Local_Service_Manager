@@ -138,7 +138,9 @@ class TunnelManager:
                 # dead process.  add() intentionally rejects duplicate names,
                 # so temporarily remove this stale definition and restore it
                 # if process creation fails.
-                save_tunnels([candidate for candidate in definitions if candidate.get("name") != tunnel_name], TUNNELS_FILE)
+                save_tunnels(
+                    [candidate for candidate in definitions if candidate.get("name") != tunnel_name], TUNNELS_FILE
+                )
                 try:
                     results.append(
                         self.add(

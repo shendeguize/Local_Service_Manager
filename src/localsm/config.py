@@ -9,7 +9,6 @@ from typing import Any
 
 import yaml
 
-
 ROOT = Path(__file__).resolve().parents[2]
 PROJECT_ROOT = Path(os.environ.get("LOCALSM_ROOT", ROOT)).expanduser().resolve()
 CONFIG_DIR = Path(os.environ.get("LOCALSM_CONFIG_DIR", PROJECT_ROOT / "config")).expanduser()

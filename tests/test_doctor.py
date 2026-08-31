@@ -2,10 +2,15 @@ from localsm import doctor
 
 
 def test_print_report_exit_code(capsys):
-    assert doctor.print_report([
-        doctor.Check("A", "good", "PASS", "ok"),
-        doctor.Check("A", "bad", "FAIL", "broken"),
-    ]) == 1
+    assert (
+        doctor.print_report(
+            [
+                doctor.Check("A", "good", "PASS", "ok"),
+                doctor.Check("A", "bad", "FAIL", "broken"),
+            ]
+        )
+        == 1
+    )
     output = capsys.readouterr().out
     assert "[A]" in output
     assert "bad" in output

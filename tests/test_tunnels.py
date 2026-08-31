@@ -55,3 +55,24 @@ def test_add_rejects_duplicate_and_ssh_failure(tunnel_manager, monkeypatch):
     with pytest.raises(TunnelError, match="exited"):
         tunnel_manager.add("bad", "pod", 18182, 8080)
     assert tunnel_manager.list() == []
+
+
+def test_add_rejects_invalid_port(tunnel_manager):
+    with pytest.raises(TunnelError, match="between 1 and 65535"):
+        tunnel_manager.add("bad", "pod", 0, 8080)
+
+
+def test_add_reports_process_start_failure(tunnel_manager, monkeypatch):
+    monkeypatch.setattr(tunnels, "port_available", lambda port: True)
+
+    def fail(*args, **kwargs):
+        raise OSError("ssh missing")
+
+    monkeypatch.setattr(tunnels.subprocess, "Popen", fail)
+    with pytest.raises(TunnelError, match="cannot start tunnel: ssh missing"):
+        tunnel_manager.add("bad", "pod", 18183, 8080)
+
+
+def test_ensure_rejects_unknown_name(tunnel_manager):
+    with pytest.raises(TunnelError, match="not found"):
+        tunnel_manager.ensure("missing")

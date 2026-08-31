@@ -1,0 +1,23 @@
+{
+  "name": "@shendeguize/local-sm",
+  "version": "0.1.0",
+  "description": "npm launcher for the LocalSM Python CLI",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shendeguize/Local_Service_Manager.git"
+  },
+  "bin": {
+    "LocalSM": "bin/local-sm.js"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

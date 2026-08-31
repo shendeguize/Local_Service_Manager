@@ -11,7 +11,9 @@ def write(path: Path, text: str) -> Path:
 
 
 def test_load_services_and_command_forms(tmp_path):
-    path = write(tmp_path / "services.yaml", """
+    path = write(
+        tmp_path / "services.yaml",
+        """
 port_pool: [9000, 9010]
 services:
   demo:
@@ -20,7 +22,8 @@ services:
     set_port: ["demo config {port}", "demo restart"]
     stop: "demo stop"
     env: {MODE: test}
-""")
+""",
+    )
     services, pool = load_services(path)
     assert pool == (9000, 9010)
     assert services["demo"].set_port == ("demo config {port}", "demo restart")
@@ -28,13 +31,16 @@ services:
     assert services["demo"].env == {"MODE": "test"}
 
 
-@pytest.mark.parametrize("text", [
-    "port_pool: [9000]",
-    "port_pool: [9000, 70000]",
-    "port_pool: [9001, 9000]",
-    "services: {demo: {preferred_port: 0}}",
-    "services: {demo: {start: '', set_port: [1]}}",
-])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "port_pool: [9000]",
+        "port_pool: [9000, 70000]",
+        "port_pool: [9001, 9000]",
+        "services: {demo: {preferred_port: 0}}",
+        "services: {demo: {start: '', set_port: [1]}}",
+    ],
+)
 def test_load_services_rejects_invalid_data(tmp_path, text):
     with pytest.raises(ConfigError):
         load_services(write(tmp_path / "bad.yaml", text))
