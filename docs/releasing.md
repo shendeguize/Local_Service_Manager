@@ -17,7 +17,8 @@ Before the first release, configure both registries:
 2. On npmjs.com, configure the package
    `@shendeguize/local-sm` to trust GitHub Actions for the same owner,
    repository, workflow filename, and `pypi` environment. The package scope
-   must be allowed to publish publicly.
+   must be allowed to publish publicly. npm Trusted Publishing requires npm
+   CLI 11.5.1+ and Node 22.14.0+; the workflow uses Node 24.
 
 The GitHub repository must also allow Actions to create tags and releases.
 The `pypi` environment should be protected if a manual approval gate is
