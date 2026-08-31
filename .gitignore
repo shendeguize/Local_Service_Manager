@@ -9,6 +9,8 @@ __pycache__/
 .coverage
 htmlcov/
 dist/
+packages/npm/wheel/
+packages/npm/*.tgz
 
 # DevolaFlow local workspace (whitelist team-collab subdirs; everything else private)
 # Per feedback_for_v12.1.0.md — narrow whitelist replaces v9.2.3 broad ignore.

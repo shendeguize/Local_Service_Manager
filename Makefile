@@ -1,7 +1,7 @@
 UV ?= uv
 LOCALSM ?= ./LocalSM
 
-.PHONY: install lint test test-js docs hygiene cov check build release-preflight smoke doctor web clean
+.PHONY: install lint test test-js docs hygiene cov check build package-npm release-preflight smoke doctor web clean
 
 install:
 	$(UV) tool install --editable . --force
@@ -27,6 +27,12 @@ check: lint test test-js docs hygiene
 
 build:
 	$(UV) build
+
+package-npm:
+	rm -rf dist packages/npm/wheel
+	$(UV) build
+	mkdir -p packages/npm/wheel
+	set -- dist/*.whl; test "$$#" -eq 1; cp "$$1" packages/npm/wheel/
 
 release-preflight: check build
 

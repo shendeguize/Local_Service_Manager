@@ -12,6 +12,7 @@
   },
   "files": [
     "bin",
+    "wheel",
     "README.md"
   ],
   "engines": {
@@ -21,6 +22,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
+    "prepublishOnly": "node -e \"const fs=require('node:fs');const p=require('./package.json');const w=fs.readdirSync('./wheel').filter(n=>n==='local_sm-'+p.version+'-py3-none-any.whl');if(w.length!==1)throw new Error('Expected exactly one matching LocalSM wheel in wheel/');\"",
     "test": "node --test"
   }
 }

@@ -11,9 +11,21 @@ the services it started.
 
 ## Installation
 
-### Recommended: install globally with uv
+### Recommended: direct installation with npm
 
-You need Python 3.12+ and [uv](https://docs.astral.sh/uv/):
+You need Node.js 18+ and [uv](https://docs.astral.sh/uv/):
+
+```sh
+npx @shendeguize/local-sm --version
+```
+
+The npm package includes the matching LocalSM wheel, so it does not require
+LocalSM to be published on PyPI. On first run, `uv` creates an isolated
+environment and installs the public runtime dependencies.
+
+### Developers: install globally with uv
+
+For development or running from source, you need Python 3.12+ and `uv`:
 
 ```sh
 uv tool install --editable . --force
@@ -21,18 +33,7 @@ LocalSM --version
 ```
 
 Editable installation keeps the global command pointed at the repository's
-`config/` and `state/` directories.
-
-### npm launcher
-
-With `uv` installed, you can also run the published Python CLI through the npm
-launcher:
-
-```sh
-npx @shendeguize/local-sm --version
-```
-
-The npm package is a thin wrapper and does not bundle Python. See
+`config/` and `state/` directories. See
 [`packages/npm/README.md`](packages/npm/README.md) for details.
 See [`docs/releasing.md`](docs/releasing.md) for the release process.
 
@@ -144,8 +145,8 @@ and local links.
 
 ## Roadmap
 
-- npm launcher: available as `@shendeguize/local-sm` and requires `uv` on the
-  user's machine.
+- Direct npm installation: `@shendeguize/local-sm` includes the LocalSM wheel
+  and requires `uv` on the user's machine.
 - Native launchd templates: detached processes are supported today; per-service
   system management can be added later.
 - Remote listener diffs and notifications: currently scans and caches on demand.

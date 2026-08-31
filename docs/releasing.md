@@ -1,29 +1,23 @@
 # Releasing LocalSM
 
-This repository publishes the Python distribution `local-sm`, a GitHub
-Release, and the npm launcher `@shendeguize/local-sm` from the same
-version tag. The release workflow uses GitHub OIDC; no PyPI or npm token is
-stored in the repository. PyPI publishing is optional until its publisher is
-configured.
+This repository publishes a GitHub Release and the npm package
+`@shendeguize/local-sm` from the same version tag. The npm package includes
+the matching Python wheel, so npm users do not depend on LocalSM being
+published to PyPI. The release workflow uses GitHub OIDC; no npm token is
+stored in the repository. PyPI publishing remains optional.
 
 ## One-time publisher setup
 
-Before the first release, configure both registries:
+Before the first npm release, configure npm:
 
-1. On PyPI, add a pending trusted publisher for project `local-sm`:
-   - owner: `shendeguize`;
-   - repository: `Local_Service_Manager`;
-   - workflow filename: `release.yml`;
-   - environment: `pypi`.
-2. On npmjs.com, configure the package
+1. On npmjs.com, configure the package
    `@shendeguize/local-sm` to trust GitHub Actions for the same owner,
-   repository, workflow filename, and `pypi` environment. The package scope
-   must be allowed to publish publicly. npm Trusted Publishing requires npm
-   CLI 11.5.1+ and Node 22.14.0+; the workflow uses Node 24.
+   repository, and workflow filename. The package scope must be allowed to
+   publish publicly. npm Trusted Publishing requires npm CLI 11.5.1+ and
+   Node 22.14.0+; the workflow uses Node 24.
 
 The GitHub repository must also allow Actions to create tags and releases.
-The `pypi` environment should be protected if a manual approval gate is
-desired.
+Configure the `pypi` environment only if PyPI publishing is enabled later.
 
 ## Release process
 
@@ -32,19 +26,18 @@ desired.
 3. Run `make release-preflight` locally and merge the pull request.
 4. The **Tag release** workflow creates `vX.Y.Z` on the merged version.
 5. The **Release** workflow validates the tag, verifies that it points to a
-   commit reachable from `main`, builds the wheel and sdist, creates the
-   GitHub Release, and publishes the npm wrapper. PyPI remains skipped for tag
-   pushes; after configuring its publisher, run the workflow manually with
-   `publish_pypi` enabled.
+   commit reachable from `main`, builds the wheel and sdist, embeds the wheel
+   in the npm package, creates the GitHub Release, and publishes npm. PyPI
+   remains skipped for tag pushes; after configuring its publisher, run the
+   workflow manually with `publish_pypi` enabled.
 6. Verify the public installations:
 
 ```sh
-uvx --from local-sm==X.Y.Z LocalSM --version
 npx @shendeguize/local-sm --version
 ```
 
-For the initial `v0.1.0`, create the tag after all release workflows and
-trusted publishers are configured:
+For the initial `v0.1.0`, create the tag after the release workflow and npm
+trusted publisher are configured:
 
 ```sh
 git tag -a v0.1.0 -m "Release v0.1.0"
