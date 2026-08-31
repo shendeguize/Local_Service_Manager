@@ -5,10 +5,12 @@ All notable changes to LocalSM are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.2] - 2026-09-01
 
 ### Changed
 
+- The npm package now bundles the matching LocalSM wheel, so npm installation
+  no longer depends on LocalSM being published to PyPI.
 - The npm installation script now automatically installs `uv` with the
   official installer when it is not already available.
 - Release builds now publish the npm package from GitHub Actions through the
@@ -16,6 +18,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- The published 0.1.1 npm package shipped without a wheel and resolved
+  `local-sm` from PyPI, where it does not exist, so every
+  `npx @shendeguize/local-sm` call failed. The launcher now runs the bundled
+  wheel.
 - The tag workflow now dispatches the release workflow explicitly. Tags pushed
   with `GITHUB_TOKEN` raise no push event, so releases were never built.
 - The release workflow now builds from the released tag instead of `main` when
@@ -29,8 +35,6 @@ and versions follow [Semantic Versioning](https://semver.org/).
   every `npx @shendeguize/local-sm` call failed; it now uses `uv tool run`.
 - Local npm publishes are pinned to registry.npmjs.org via `publishConfig`
   so mirror registries configured in `~/.npmrc` are never targeted.
-- The npm package now bundles the matching LocalSM wheel, so npm installation
-  no longer depends on LocalSM being published to PyPI.
 
 ## [0.1.0] - 2026-09-01
 
