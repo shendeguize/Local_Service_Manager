@@ -14,6 +14,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 - Release builds now publish the npm package from GitHub Actions through the
   npm trusted-publisher environment.
 
+### Fixed
+
+- The tag workflow now dispatches the release workflow explicitly. Tags pushed
+  with `GITHUB_TOKEN` raise no push event, so releases were never built.
+- The release workflow now builds from the released tag instead of `main` when
+  it is started manually.
+
 ## [0.1.1] - 2026-09-01
 
 ### Fixed
