@@ -10,6 +10,11 @@ on:
         description: "Existing version tag to publish, for example v0.1.0"
         required: true
         type: string
+      publish_pypi:
+        description: "Also publish the Python package to PyPI"
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -100,13 +105,31 @@ jobs:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           files: dist/*
           generate_release_notes: true
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Publish npm wrapper with provenance
+        run: npm publish packages/npm --access public --provenance
+
+  publish-pypi:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_pypi == true }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: pypi
+      url: https://pypi.org/p/local-sm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist
       - name: Publish to PyPI with trusted publishing
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          registry-url: https://registry.npmjs.org
-      - name: Publish npm wrapper with provenance
-        run: npm publish packages/npm --access public --provenance

@@ -3,7 +3,8 @@
 This repository publishes the Python distribution `local-sm`, a GitHub
 Release, and the npm launcher `@shendeguize/local-sm` from the same
 version tag. The release workflow uses GitHub OIDC; no PyPI or npm token is
-stored in the repository.
+stored in the repository. PyPI publishing is optional until its publisher is
+configured.
 
 ## One-time publisher setup
 
@@ -17,7 +18,8 @@ Before the first release, configure both registries:
 2. On npmjs.com, configure the package
    `@shendeguize/local-sm` to trust GitHub Actions for the same owner,
    repository, workflow filename, and `pypi` environment. The package scope
-   must be allowed to publish publicly.
+   must be allowed to publish publicly. npm Trusted Publishing requires npm
+   CLI 11.5.1+ and Node 22.14.0+; the workflow uses Node 24.
 
 The GitHub repository must also allow Actions to create tags and releases.
 The `pypi` environment should be protected if a manual approval gate is
@@ -31,7 +33,9 @@ desired.
 4. The **Tag release** workflow creates `vX.Y.Z` on the merged version.
 5. The **Release** workflow validates the tag, verifies that it points to a
    commit reachable from `main`, builds the wheel and sdist, creates the
-   GitHub Release, and publishes to PyPI and npm.
+   GitHub Release, and publishes the npm wrapper. PyPI remains skipped for tag
+   pushes; after configuring its publisher, run the workflow manually with
+   `publish_pypi` enabled.
 6. Verify the public installations:
 
 ```sh
