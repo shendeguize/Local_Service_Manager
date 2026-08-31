@@ -7,7 +7,7 @@ const version = require("../package.json").version;
 function main() {
   const result = spawnSync(
     "uv",
-    ["x", "--from", `local-sm==${version}`, "LocalSM", ...process.argv.slice(2)],
+    ["tool", "run", "--from", `local-sm==${version}`, "LocalSM", ...process.argv.slice(2)],
     { stdio: "inherit" },
   );
 
