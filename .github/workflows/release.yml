@@ -113,10 +113,12 @@ jobs:
       - name: Publish npm wrapper with provenance
         run: |
           VERSION="$(node -p "require('./packages/npm/package.json').version")"
-          if npm view "@shendeguize/local-sm@${VERSION}" version >/dev/null 2>&1; then
+          # Query with a clean config: the setup-node placeholder token would
+          # otherwise turn even public registry reads into 401s.
+          if NPM_CONFIG_USERCONFIG=/dev/null npm view "@shendeguize/local-sm@${VERSION}" version >/dev/null 2>&1; then
             echo "@shendeguize/local-sm@${VERSION} is already on the registry, skipping publish"
           else
-            npm publish packages/npm --access public --provenance
+            npm publish ./packages/npm --access public --provenance
           fi
 
   publish-pypi:
