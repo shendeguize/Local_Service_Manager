@@ -5,6 +5,13 @@ All notable changes to LocalSM are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- The npm installation script now automatically installs `uv` with the
+  official installer when it is not already available.
+
 ## [0.1.1] - 2026-09-01
 
 ### Fixed

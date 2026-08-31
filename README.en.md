@@ -13,15 +13,17 @@ the services it started.
 
 ### Recommended: direct installation with npm
 
-You need Node.js 18+ and [uv](https://docs.astral.sh/uv/):
+You need Node.js 18+:
 
 ```sh
 npx @shendeguize/local-sm --version
 ```
 
 The npm package includes the matching LocalSM wheel, so it does not require
-LocalSM to be published on PyPI. On first run, `uv` creates an isolated
-environment and installs the public runtime dependencies.
+LocalSM to be published on PyPI. Its install script automatically installs
+`uv` with the official installer when it is not already available. On first
+run, `uv` creates an isolated environment and installs the public runtime
+dependencies.
 
 ### Developers: install globally with uv
 
@@ -146,7 +148,7 @@ and local links.
 ## Roadmap
 
 - Direct npm installation: `@shendeguize/local-sm` includes the LocalSM wheel
-  and requires `uv` on the user's machine.
+  and automatically installs `uv` when needed.
 - Native launchd templates: detached processes are supported today; per-service
   system management can be added later.
 - Remote listener diffs and notifications: currently scans and caches on demand.

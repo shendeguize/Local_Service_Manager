@@ -4,6 +4,7 @@ const { spawnSync } = require("node:child_process");
 const { existsSync, readdirSync } = require("node:fs");
 const path = require("node:path");
 
+const { ensureUv } = require("./ensure-uv.js");
 const version = require("../package.json").version;
 
 function findWheel() {
@@ -33,8 +34,14 @@ function main() {
     return 1;
   }
 
+  const uv = ensureUv();
+  if (!uv) {
+    console.error("LocalSM could not install uv. Install it from https://docs.astral.sh/uv/");
+    return 127;
+  }
+
   const result = spawnSync(
-    "uv",
+    uv,
     ["tool", "run", "--from", wheel, "LocalSM", ...process.argv.slice(2)],
     { stdio: "inherit" },
   );
