@@ -20,10 +20,12 @@ npx @shendeguize/local-sm --version
 ```
 
 The npm package includes the matching LocalSM wheel, so it does not require
-LocalSM to be published on PyPI. Its install script automatically installs
-`uv` with the official installer when it is not already available. On first
-run, `uv` creates an isolated environment and installs the public runtime
-dependencies.
+LocalSM to be published on PyPI. On first run the launcher installs `uv` with
+Astral's official installer when it is not already available, then `uv`
+creates an isolated environment and installs the public runtime dependencies.
+The package also ships an install script that does the same thing earlier, but
+recent npm versions block lifecycle scripts by default, so the launcher's own
+check is what usually performs the installation.
 
 ### Developers: install globally with uv
 

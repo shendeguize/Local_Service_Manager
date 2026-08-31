@@ -10,9 +10,11 @@ Install Node.js 18+ first, then run:
 npx @shendeguize/local-sm --version
 ```
 
-The npm install script automatically installs `uv` with the official installer
-when it is not already available. The launcher retries this check at runtime,
-so it also works when npm lifecycle scripts were disabled.
+The launcher installs `uv` with Astral's official installer on first run when
+it is not already available, so no separate setup step is needed. The package
+also ships an install script that does the same thing earlier, but recent npm
+versions block lifecycle scripts by default, so the launcher's own check is
+what usually performs the installation.
 
 `uv` creates an isolated environment from the bundled wheel and downloads
 only LocalSM's public runtime dependencies. The npm package is the direct
