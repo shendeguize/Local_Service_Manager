@@ -105,6 +105,13 @@ jobs:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           files: dist/*
           generate_release_notes: true
+      - name: Bundle Python wheel into npm package
+        run: |
+          rm -rf packages/npm/wheel
+          mkdir -p packages/npm/wheel
+          set -- dist/*.whl
+          test "$#" -eq 1
+          cp "$1" packages/npm/wheel/
       - uses: actions/setup-node@v6
         with:
           node-version: "24"

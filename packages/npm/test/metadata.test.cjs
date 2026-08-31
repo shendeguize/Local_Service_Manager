@@ -9,4 +9,6 @@ test("npm wrapper exposes the LocalSM launcher metadata", async () => {
   assert.equal(packageJson.name, "@shendeguize/local-sm");
   assert.match(packageJson.version, /^\d+\.\d+\.\d+$/);
   assert.equal(packageJson.bin.LocalSM, "bin/local-sm.js");
+  assert.ok(packageJson.files.includes("wheel"));
+  assert.match(packageJson.scripts.prepublishOnly, /Expected exactly one matching LocalSM wheel/);
 });

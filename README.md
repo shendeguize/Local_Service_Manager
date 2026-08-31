@@ -9,26 +9,28 @@ LocalSM 没有常驻 supervisor：服务以 detached 进程运行，用 pidfile�
 
 ## 安装
 
-### 推荐：uv 全局安装
+### 推荐：npm 直接安装
 
-需要 Python 3.12+ 和 [uv](https://docs.astral.sh/uv/)：
+需要 Node.js 18+ 和 [uv](https://docs.astral.sh/uv/)：
+
+```sh
+npx @shendeguize/local-sm --version
+```
+
+该 npm 包内置匹配版本的 LocalSM wheel，不依赖 LocalSM 发布到 PyPI。
+首次运行时，`uv` 会创建隔离环境并安装公开的运行时依赖。
+
+### 开发者：uv 全局安装
+
+开发或从源码运行时，需要 Python 3.12+ 和 `uv`：
 
 ```sh
 uv tool install --editable . --force
 LocalSM --version
 ```
 
-editable 安装会让全局命令继续使用仓库内的 `config/` 和 `state/`。
-
-### npm 启动器
-
-如果已安装 `uv`，也可以通过 npm 启动器运行已发布的 Python CLI：
-
-```sh
-npx @shendeguize/local-sm --version
-```
-
-该 npm 包是轻量包装器，不会捆绑 Python；完整说明见
+editable 安装会让全局命令继续使用仓库内的 `config/` 和 `state/`。npm
+包的说明见
 [`packages/npm/README.md`](packages/npm/README.md)。
 版本发布流程见 [`docs/releasing.md`](docs/releasing.md)。
 
@@ -154,6 +156,6 @@ README.md 与 README.en.md 的上述一级章节需要保持同步；新增用�
 
 ## 路线图
 
-- npm 启动器：已提供 `@shendeguize/local-sm`，依赖用户侧安装的 `uv`。
+- npm 直接安装：已提供 `@shendeguize/local-sm`，内置 LocalSM wheel，依赖用户侧安装的 `uv`。
 - launchd 原生服务模板：当前只管理 detached 进程，后续可按服务选择系统托管。
 - 远端扫描结果 diff 与通知：当前提供按需扫描和缓存。
