@@ -17,7 +17,8 @@ Before the first npm release, configure npm:
    Node 22.14.0+; the workflow uses Node 24.
 
 The GitHub repository must also allow Actions to create tags and releases.
-Configure the `pypi` environment only if PyPI publishing is enabled later.
+Configure the `npm` environment for the npm trusted publisher. Configure the
+`pypi` environment only if PyPI publishing is enabled later.
 
 ## Release process
 
@@ -26,23 +27,20 @@ Configure the `pypi` environment only if PyPI publishing is enabled later.
 3. Run `make release-preflight` locally and merge the pull request.
 4. The **Tag release** workflow creates `vX.Y.Z` on the merged version.
 5. The **Release** workflow validates the tag, verifies that it points to a
-   commit reachable from `main`, builds the wheel and sdist, embeds the wheel
-   in the npm package, creates the GitHub Release, and publishes npm. PyPI
+   commit reachable from `main`, builds the wheel and sdist, creates the
+   GitHub Release, embeds the wheel in the npm package, and publishes npm
+   through the `npm` environment. No local `npm publish` is required. PyPI
    remains skipped for tag pushes; after configuring its publisher, run the
    workflow manually with `publish_pypi` enabled.
-6. Verify the public installations:
+6. Verify the public installation:
 
 ```sh
 npx @shendeguize/local-sm --version
 ```
 
-For the initial `v0.1.0`, create the tag after the release workflow and npm
-trusted publisher are configured:
-
-```sh
-git tag -a v0.1.0 -m "Release v0.1.0"
-git push origin v0.1.0
-```
+For the initial release, use the **Release preparation** workflow and merge
+its pull request. The **Tag release** and **Release** workflows then run
+automatically.
 
 ## Main branch protection
 
