@@ -7,12 +7,6 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [0.3.3] - 2026-09-01
 
-### Added
-
-- Describe the user-visible changes in this release.
-
-## [Unreleased]
-
 ### Changed
 
 - A service's `env` now covers the same commands `working_dir` does. It reached
