@@ -88,6 +88,18 @@ class ServiceManager:
             return str(Path(config.working_dir).expanduser())
         return None
 
+    def _environment(self, config: ServiceConfig) -> dict[str, str] | None:
+        """The environment a service's own commands run in.
+
+        `env` used to reach only `start`, so a service needing a token to come
+        up ran without it when being stopped, asked for its status, told to
+        change port, or used as the context for `exec` — the same commands
+        `working_dir` already covers.
+        """
+        if not config.env:
+            return None
+        return {**os.environ, **config.env}
+
     def _render(self, command: str, port: int | None, current_port: int | None = None) -> str:
         values = {
             "port": port or "",
@@ -146,6 +158,7 @@ class ServiceManager:
                 shell=True,
                 executable=self._shell(),
                 cwd=self._working_dir(config),
+                env=self._environment(config),
                 capture_output=True,
                 text=True,
                 timeout=5,
@@ -219,16 +232,13 @@ class ServiceManager:
         path = log_path(state_dir(), name)
         path.parent.mkdir(parents=True, exist_ok=True)
         log_handle = path.open("a", encoding="utf-8")
-        env = os.environ.copy()
-        if config.env:
-            env.update(config.env)
         try:
             process = subprocess.Popen(
                 command,
                 shell=True,
                 executable=self._shell(),
                 cwd=self._working_dir(config),
-                env=env,
+                env=self._environment(config),
                 stdin=subprocess.DEVNULL,
                 stdout=log_handle,
                 stderr=subprocess.STDOUT,
@@ -352,7 +362,12 @@ class ServiceManager:
         config = self._config(name)
         if not command:
             raise ServiceError("exec requires a command")
-        result = subprocess.run(command, cwd=self._working_dir(config), check=False)
+        result = subprocess.run(
+            command,
+            cwd=self._working_dir(config),
+            env=self._environment(config),
+            check=False,
+        )
         return result.returncode
 
     def logs(self, name: str, lines: int = 40) -> str:
@@ -365,6 +380,7 @@ class ServiceManager:
             shell=True,
             executable=self._shell(),
             cwd=self._working_dir(config),
+            env=self._environment(config),
             check=False,
         )
         if result.returncode:

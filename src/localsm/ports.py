@@ -71,8 +71,15 @@ def allocate_port(
     if auto or preferred is None:
         first, last = port_range or (8000, 8999)
         candidates.extend(port for port in range(first, last + 1) if port not in candidates)
+    first, last = port_range or (8000, 8999)
     for port in candidates:
         if port_available(port):
             save_port(service, port)
             return port
-    raise PortError(f"no free port found for {service}")
+    if auto or preferred is None:
+        raise PortError(f"no free port for {service} in {first}-{last}")
+    # Only the sticky and preferred ports were tried; the pool is untouched, so
+    # "no free port" would be untrue and the way out is the flag that opens it.
+    tried = ", ".join(str(port) for port in candidates)
+    label = f"port {tried} is" if len(candidates) == 1 else f"ports {tried} are"
+    raise PortError(f"{label} in use; pass --auto-port to take a free one from {first}-{last}")

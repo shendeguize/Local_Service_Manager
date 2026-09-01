@@ -90,10 +90,17 @@ def parse_ssh_config(path: Path | None = None) -> list[SSHHost]:
 
 
 def _parse_ss(output: str) -> list[int]:
+    """Ports out of whichever of the four listener commands the host had.
+
+    ss, lsof and netstat all write `address:port`, but the /proc/net/tcp
+    fallback — the branch that runs on the slim images these hosts often are —
+    writes a bare port per line, and demanding a colon silently found nothing
+    there.
+    """
     ports: set[int] = set()
     for line in output.splitlines():
         # ss -ltnH: LISTEN 0 128 127.0.0.1:8080 0.0.0.0:*
-        match = re.search(r":(\d+)(?:\s|$)", line)
+        match = re.search(r":(\d+)(?:\s|$)", line) or re.fullmatch(r"\s*(\d+)\s*", line)
         if match and 1 <= int(match.group(1)) <= 65535:
             ports.add(int(match.group(1)))
     return sorted(ports)

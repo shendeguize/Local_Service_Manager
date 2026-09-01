@@ -80,7 +80,9 @@ The fields:
 - `url_from_log`: read the real URL out of the log, keeping the URL fragment (for
   example Kimi's `#token=...`).
 - `working_dir`: the working directory for start, stop, and exec commands.
-- `env`: extra environment variables.
+- `env`: extra environment variables. These cover the same commands
+  `working_dir` does — `start`, `stop`, `set_port`, `status_cmd`, and
+  `LocalSM exec` all run with them.
 
 The variables available in command templates:
 

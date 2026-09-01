@@ -92,6 +92,16 @@ def test_add_reports_process_start_failure(tunnel_manager, monkeypatch):
         tunnel_manager.add("bad", "pod", 18183, 8080)
 
 
+def test_a_stopped_tunnel_reports_no_pid(tunnel_manager, monkeypatch):
+    monkeypatch.setattr(tunnels, "port_available", lambda port: True)
+    monkeypatch.setattr(tunnels.subprocess, "Popen", lambda *args, **kwargs: FakeProcess())
+    tunnel_manager.add("demo", "pod", 18186, 8080)
+    monkeypatch.setattr(tunnel_manager, "_alive", lambda pid: False)
+    (item,) = tunnel_manager.list()
+    assert item["state"] == "stopped"
+    assert item["pid"] is None
+
+
 def test_ensure_rejects_unknown_name(tunnel_manager):
     with pytest.raises(TunnelError, match="not found"):
         tunnel_manager.ensure("missing")

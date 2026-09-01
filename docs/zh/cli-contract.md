@@ -63,6 +63,13 @@ JSON。脚本请一律使用 `--json`，人类文本的措辞不在兼容性承�
 | `tunnel rm` | `{"removed": name}` |
 | `tunnel list` / `tunnel ensure` | 隧道对象数组 |
 | `ssh` | `{"launched": host, "app": "ghostty"\|"terminal"}` |
+| `enable` | `{"name", "label", "enabled": bool, "port": int, "plist", "status": {...}}` |
+| `disable` | `{"name", "label", "enabled": bool, "was_enabled": bool, "status": {...}}` |
+| `edit`（services） | `{"path", "added": [str], "removed": [str], "changed": [str], "restart_required": [str]}` |
+| `edit tunnels` | `{"path", "added": [str], "removed": [str], "changed": [str], "ensure_required": [str]}` |
+
+`completion` 不受 `--json` 影响：它的输出要被 shell 直接消费，`zsh`/`bash` 输出补全
+脚本本身，`services` 每行一个服务名。
 
 隧道对象的字段为 `name`、`host`、`local_port`、`remote_host`、`remote_port`，
 `list` 与 `ensure` 另附 `state` 和 `pid`。

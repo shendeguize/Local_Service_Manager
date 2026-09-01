@@ -19,6 +19,10 @@ def read_log(state_dir: Path, service: str, lines: int = 40) -> str:
         content = path.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return ""
+    # A tail of zero is empty, not everything: [-0:] is the whole list, and a
+    # negative count would drop that many lines off the front instead.
+    if lines <= 0:
+        return ""
     return "\n".join(content.splitlines()[-lines:])
 
 

@@ -76,6 +76,17 @@ class Output:
             print(text, end="" if text.endswith("\n") or not text else "\n")
 
 
+def positive_int(value: str) -> int:
+    """A count that has to be at least one, rejected at the parser boundary."""
+    try:
+        number = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{value!r} is not an integer") from None
+    if number < 1:
+        raise argparse.ArgumentTypeError(f"must be 1 or greater, got {number}")
+    return number
+
+
 def _global_flags() -> argparse.ArgumentParser:
     # SUPPRESS keeps an unset flag out of the namespace, so `LocalSM --json up`
     # is not overwritten by the subparser's own default.
@@ -131,7 +142,12 @@ def build_parser() -> argparse.ArgumentParser:
     execute.add_argument("exec_command", nargs=argparse.REMAINDER, help="command and arguments to run")
     logs = add("logs", help="show the tail of a service's log")
     logs.add_argument("service", help="service whose log to read")
-    logs.add_argument("--lines", type=int, default=40, help="number of trailing lines to show (default: 40)")
+    logs.add_argument(
+        "--lines",
+        type=positive_int,
+        default=40,
+        help="number of trailing lines to show (default: 40)",
+    )
 
     remote = add("remote", help="inspect remote SSH hosts")
     remote_sub = remote.add_subparsers(dest="remote_command", required=True)
@@ -277,7 +293,10 @@ def _run_edit(out: Output, target: str) -> int:
     # Scaffolding first means `edit` works on a fresh install without making
     # the user discover `init` as a separate step.
     scaffold_config()
-    path = services_file() if target == "services" else tunnels_file()
+    if target == "tunnels":
+        return _run_edit_tunnels(out)
+
+    path = services_file()
     before, _ = load_services()
     open_in_editor(path)
     after, _ = load_services()
@@ -303,6 +322,45 @@ def _run_edit(out: Output, target: str) -> int:
         lines.append(f"restart to apply: {' '.join(f'LocalSM restart {name}' for name in restart)}")
     elif not (added or removed or changed):
         lines.append("no service definitions changed")
+    out.emit(payload, lines)
+    return EXIT_OK
+
+
+def _run_edit_tunnels(out: Output) -> int:
+    """Editing tunnels.yaml, summarised the way editing services.yaml is.
+
+    This used to diff the services either way, so editing tunnels reported that
+    no service definitions had changed and said nothing about the tunnels.
+    """
+
+    def by_name(tunnels: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+        return {str(item["name"]): item for item in tunnels}
+
+    path = tunnels_file()
+    before = by_name(load_tunnels())
+    open_in_editor(path)
+    after = by_name(load_tunnels())
+
+    changed = sorted(name for name in set(before) & set(after) if before[name] != after[name])
+    added = sorted(set(after) - set(before))
+    removed = sorted(set(before) - set(after))
+    ensure = sorted(set(added) | set(changed))
+
+    payload = {
+        "path": str(path),
+        "added": added,
+        "removed": removed,
+        "changed": changed,
+        "ensure_required": ensure,
+    }
+    lines = [f"edited {path}"]
+    for label, names in (("added", added), ("removed", removed), ("changed", changed)):
+        if names:
+            lines.append(f"{label}: {', '.join(names)}")
+    if ensure:
+        lines.append(f"open them with: {' '.join(f'LocalSM tunnel ensure {name}' for name in ensure)}")
+    else:
+        lines.append("no tunnels changed")
     out.emit(payload, lines)
     return EXIT_OK
 

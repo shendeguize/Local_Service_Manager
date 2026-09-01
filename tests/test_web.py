@@ -117,6 +117,21 @@ def test_web_ssh_endpoint(monkeypatch):
     assert calls == [("pod-a", "terminal")]
 
 
+@pytest.mark.parametrize("payload", [{}, {"port": "abc"}, {"port": None}, {"port": [1]}])
+def test_set_port_rejects_a_bad_payload_as_json(sample_config, payload):
+    """Not Flask's HTML 500 page, which a caller expecting JSON cannot read."""
+    response = web.create_app().test_client().post("/api/services/web/set-port", json=payload)
+    assert response.status_code == 400
+    assert "numeric port" in response.get_json()["error"]
+
+
+def test_a_broken_configuration_is_reported_as_json(localsm_home):
+    (localsm_home / "services.yaml").write_text("services: [broken\n", encoding="utf-8")
+    response = web.create_app().test_client().get("/api/services")
+    assert response.status_code == 400
+    assert "services.yaml" in response.get_json()["error"]
+
+
 def test_web_converts_local_errors_to_bad_request(monkeypatch):
     def fail(self, name, requested_port=None, auto_port=False):
         raise web.ServiceError("service is unavailable")

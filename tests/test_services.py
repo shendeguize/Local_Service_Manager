@@ -8,6 +8,12 @@ from localsm.config import ServiceConfig
 from localsm.services import ServiceError, ServiceManager
 
 
+class FakeCompleted:
+    returncode = 0
+    stdout = ""
+    stderr = ""
+
+
 @pytest.fixture
 def manager(localsm_home):
     definition = ServiceConfig("demo", f'{sys.executable} -c "import time; time.sleep(30)"', preferred_port=18150)
@@ -116,6 +122,43 @@ def test_up_on_a_launchd_service_explains_the_frozen_port(manager, monkeypatch):
     running_on(manager, monkeypatch, 18150, managed_by="launchd")
     with pytest.raises(ServiceError, match="frozen in the agent"):
         manager.up("demo", requested_port=18155)
+
+
+@pytest.mark.parametrize(
+    ("call", "definition"),
+    [
+        (lambda m: m.execute("demo", ["true"]), {}),
+        (lambda m: m.set_port("demo", 18151), {"set_port": ("true",)}),
+        (lambda m: m.down("demo"), {"stop": ("true",)}),
+    ],
+)
+def test_service_commands_run_with_the_configured_environment(manager, monkeypatch, call, definition):
+    manager.services["demo"] = ServiceConfig("demo", "true", env={"DEMO_TOKEN": "secret"}, **definition)
+    seen = []
+
+    def record(*args, **kwargs):
+        seen.append(kwargs.get("env"))
+        return FakeCompleted()
+
+    monkeypatch.setattr(services.subprocess, "run", record)
+    monkeypatch.setattr(manager, "_pid_alive", lambda pid: False)
+    monkeypatch.setattr(manager, "_read_pid", lambda name: 4321)
+    call(manager)
+    assert seen, "the command must actually be run"
+    assert all(env and env["DEMO_TOKEN"] == "secret" for env in seen)
+    assert all("PATH" in env for env in seen), "the ambient environment is kept"
+
+
+def test_commands_of_a_service_without_env_inherit_normally(manager, monkeypatch):
+    seen = []
+
+    def record(*args, **kwargs):
+        seen.append(kwargs.get("env"))
+        return FakeCompleted()
+
+    monkeypatch.setattr(services.subprocess, "run", record)
+    manager.execute("demo", ["true"])
+    assert seen == [None]
 
 
 def test_set_port_runs_all_configured_commands(manager, monkeypatch):

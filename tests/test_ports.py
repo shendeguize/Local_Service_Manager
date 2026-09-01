@@ -25,9 +25,23 @@ def test_allocate_requested_and_auto_port(localsm_home, monkeypatch):
 
 def test_allocate_reports_exhaustion(localsm_home, monkeypatch):
     monkeypatch.setattr(ports, "port_available", lambda port: False)
-    with pytest.raises(PortError, match="no free port"):
+    with pytest.raises(PortError, match="no free port for demo in 18120-18120"):
         ports.allocate_port("demo", None, (18120, 18120), auto=True)
     with pytest.raises(PortError, match="already in use"):
         ports.allocate_port("demo", 18120, (18120, 18121), requested=18120)
     with pytest.raises(PortError, match="between"):
         ports.allocate_port("demo", None, (18120, 18121), requested=0)
+
+
+def test_a_taken_preferred_port_names_the_way_out(localsm_home, monkeypatch):
+    """The pool is untouched here, so "no free port" would be untrue."""
+    monkeypatch.setattr(ports, "port_available", lambda port: port != 18130)
+    with pytest.raises(PortError, match=r"port 18130 is in use; pass --auto-port .* 18130-18140"):
+        ports.allocate_port("demo", 18130, (18130, 18140))
+
+
+def test_a_taken_sticky_and_preferred_port_name_both(localsm_home, monkeypatch):
+    ports.save_port("demo", 18131)
+    monkeypatch.setattr(ports, "port_available", lambda port: port not in (18130, 18131))
+    with pytest.raises(PortError, match="ports 18131, 18130 are in use"):
+        ports.allocate_port("demo", 18130, (18130, 18140))
