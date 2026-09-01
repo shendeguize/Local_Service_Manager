@@ -5,7 +5,7 @@ from localsm import web
 pytestmark = pytest.mark.integration
 
 
-def test_dashboard_and_read_endpoints():
+def test_dashboard_and_read_endpoints(sample_config):
     client = web.create_app().test_client()
     assert client.get("/").status_code == 200
     assert client.get("/static/app.css").status_code == 200

@@ -29,20 +29,18 @@ def test_parse_listener_formats():
     assert remote._parse_ss("") == []
 
 
-def test_scan_hosts_and_tunnel_coverage(tmp_path, monkeypatch):
+def test_scan_hosts_and_tunnel_coverage(localsm_home, monkeypatch):
     monkeypatch.setattr(remote, "parse_ssh_config", lambda: [SSHHost("pod-a"), SSHHost("pod-b")])
     monkeypatch.setattr(remote, "_scan_one", lambda host, timeout: RemoteScan(host.alias, True, [8080]))
-    monkeypatch.setattr(remote, "load_tunnels", lambda path: [{"name": "api", "host": "pod-a", "remote_port": 8080}])
-    monkeypatch.setattr(remote, "STATE_DIR", tmp_path)
+    monkeypatch.setattr(remote, "load_tunnels", lambda: [{"name": "api", "host": "pod-a", "remote_port": 8080}])
     result = remote.scan_hosts(timeout=1)
     assert result[0]["host"] == "pod-a"
     assert result[0]["tunnels"] == {"8080": ["api"]}
-    assert (tmp_path / "remote_scan.json").exists()
+    assert (localsm_home / "remote_scan.json").exists()
 
 
-def test_unknown_host_is_reported(tmp_path, monkeypatch):
+def test_unknown_host_is_reported(localsm_home, monkeypatch):
     monkeypatch.setattr(remote, "parse_ssh_config", lambda: [])
-    monkeypatch.setattr(remote, "STATE_DIR", tmp_path)
     result = remote.scan_hosts(["missing"])
     assert result == [
         {

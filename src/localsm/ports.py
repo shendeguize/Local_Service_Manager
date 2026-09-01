@@ -6,7 +6,7 @@ import json
 import socket
 from pathlib import Path
 
-from .config import STATE_DIR, ensure_directories
+from .config import ensure_directories, state_dir
 
 
 class PortError(RuntimeError):
@@ -25,7 +25,7 @@ def port_available(port: int, host: str = "127.0.0.1") -> bool:
 
 def _state_path() -> Path:
     ensure_directories()
-    return STATE_DIR / "ports.json"
+    return state_dir() / "ports.json"
 
 
 def load_ports() -> dict[str, int]:

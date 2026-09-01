@@ -9,16 +9,53 @@ from typing import Any
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[2]
-PROJECT_ROOT = Path(os.environ.get("LOCALSM_ROOT", ROOT)).expanduser().resolve()
-CONFIG_DIR = Path(os.environ.get("LOCALSM_CONFIG_DIR", PROJECT_ROOT / "config")).expanduser()
-STATE_DIR = Path(os.environ.get("LOCALSM_STATE_DIR", PROJECT_ROOT / "state")).expanduser()
-SERVICES_FILE = CONFIG_DIR / "services.yaml"
-TUNNELS_FILE = CONFIG_DIR / "tunnels.yaml"
+DEFAULT_PORT_POOL = (8000, 8999)
 
 
 class ConfigError(ValueError):
     """Raised when LocalSM configuration is invalid."""
+
+
+def _env_path(name: str) -> Path | None:
+    value = os.environ.get(name)
+    return Path(value).expanduser() if value else None
+
+
+def project_root() -> Path | None:
+    """Return the LOCALSM_ROOT override, which holds both config/ and state/."""
+    return _env_path("LOCALSM_ROOT")
+
+
+def config_dir() -> Path:
+    override = _env_path("LOCALSM_CONFIG_DIR")
+    if override is not None:
+        return override
+    root = project_root()
+    if root is not None:
+        return root / "config"
+    return (_env_path("XDG_CONFIG_HOME") or Path.home() / ".config") / "localsm"
+
+
+def state_dir() -> Path:
+    override = _env_path("LOCALSM_STATE_DIR")
+    if override is not None:
+        return override
+    root = project_root()
+    if root is not None:
+        return root / "state"
+    return (_env_path("XDG_STATE_HOME") or Path.home() / ".local" / "state") / "localsm"
+
+
+def services_file() -> Path:
+    return config_dir() / "services.yaml"
+
+
+def tunnels_file() -> Path:
+    return config_dir() / "tunnels.yaml"
+
+
+def is_configured() -> bool:
+    return services_file().exists()
 
 
 @dataclass(frozen=True)
@@ -36,9 +73,10 @@ class ServiceConfig:
 
 
 def ensure_directories() -> None:
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    (STATE_DIR / "pids").mkdir(exist_ok=True)
-    (STATE_DIR / "logs").mkdir(exist_ok=True)
+    root = state_dir()
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "pids").mkdir(exist_ok=True)
+    (root / "logs").mkdir(exist_ok=True)
 
 
 def _as_commands(value: Any, label: str) -> tuple[str, ...]:
@@ -71,12 +109,13 @@ def _load_yaml(path: Path, default: dict[str, Any]) -> dict[str, Any]:
     return data
 
 
-def load_services(path: Path = SERVICES_FILE) -> tuple[dict[str, ServiceConfig], tuple[int, int]]:
-    data = _load_yaml(path, {"services": {}, "port_pool": [8000, 8999]})
+def load_services(path: Path | None = None) -> tuple[dict[str, ServiceConfig], tuple[int, int]]:
+    path = path or services_file()
+    data = _load_yaml(path, {"services": {}, "port_pool": list(DEFAULT_PORT_POOL)})
     raw_services = data.get("services", {})
     if not isinstance(raw_services, dict):
         raise ConfigError("services must be a mapping")
-    pool = data.get("port_pool", [8000, 8999])
+    pool = data.get("port_pool", list(DEFAULT_PORT_POOL))
     if (
         not isinstance(pool, list)
         or len(pool) != 2
@@ -123,7 +162,8 @@ def load_services(path: Path = SERVICES_FILE) -> tuple[dict[str, ServiceConfig],
     return services, (pool[0], pool[1])
 
 
-def load_tunnels(path: Path = TUNNELS_FILE) -> list[dict[str, Any]]:
+def load_tunnels(path: Path | None = None) -> list[dict[str, Any]]:
+    path = path or tunnels_file()
     data = _load_yaml(path, {"tunnels": []})
     tunnels = data.get("tunnels", [])
     if not isinstance(tunnels, list):
@@ -137,7 +177,8 @@ def load_tunnels(path: Path = TUNNELS_FILE) -> list[dict[str, Any]]:
     return tunnels
 
 
-def save_tunnels(tunnels: list[dict[str, Any]], path: Path = TUNNELS_FILE) -> None:
+def save_tunnels(tunnels: list[dict[str, Any]], path: Path | None = None) -> None:
+    path = path or tunnels_file()
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(".tmp")
     temporary.write_text(yaml.safe_dump({"tunnels": tunnels}, sort_keys=False), encoding="utf-8")

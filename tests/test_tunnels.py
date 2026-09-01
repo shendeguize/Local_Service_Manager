@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from localsm import config, tunnels
+from localsm import tunnels
 from localsm.tunnels import TunnelError, TunnelManager
 
 
@@ -19,12 +19,7 @@ class FakeProcess:
 
 
 @pytest.fixture
-def tunnel_manager(tmp_path, monkeypatch):
-    (tmp_path / "pids").mkdir()
-    (tmp_path / "logs").mkdir()
-    monkeypatch.setattr(config, "STATE_DIR", tmp_path)
-    monkeypatch.setattr(tunnels, "STATE_DIR", tmp_path)
-    monkeypatch.setattr(tunnels, "TUNNELS_FILE", tmp_path / "tunnels.yaml")
+def tunnel_manager(localsm_home):
     return TunnelManager()
 
 

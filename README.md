@@ -1,8 +1,8 @@
 # LocalSM
 
-LocalSM 是一个面向 macOS 的本地服务与 SSH 资源控制台。它把
-`enva`、`dshc`、`aqp`、`kimi`、`dsh` 等服务统一成可配置的命令模板，
-同时管理端口、日志、远端监听扫描和 SSH 隧道。
+LocalSM 是一个面向 macOS 的本地服务与 SSH 资源控制台。你把每个本地服务
+写成一份可配置的命令模板，LocalSM 统一管理它们的端口、日志、远端监听
+扫描和 SSH 隧道。
 
 LocalSM 没有常驻 supervisor：服务以 detached 进程运行，用 pidfile、端口
 探测和日志记录状态。这样即使 LocalSM 退出，已启动的服务也不会被自动杀掉。
@@ -14,8 +14,12 @@ LocalSM 没有常驻 supervisor：服务以 detached 进程运行，用 pidfile�
 需要 Node.js 18+：
 
 ```sh
-npx @shendeguize/local-sm --version
+npx @shendeguize/local-sm init
+npx @shendeguize/local-sm status
 ```
+
+`init` 会在 `~/.config/localsm/` 生成带注释的初始配置；它不会覆盖任何已
+存在的文件，重复运行是安全的。
 
 该 npm 包内置匹配版本的 LocalSM wheel，不依赖 LocalSM 发布到 PyPI。
 首次运行时，启动器会在找不到 `uv` 时自动用官方安装脚本装好它，无需你额外
@@ -32,8 +36,9 @@ uv tool install --editable . --force
 LocalSM --version
 ```
 
-editable 安装会让全局命令继续使用仓库内的 `config/` 和 `state/`。npm
-包的说明见
+无论怎么安装，LocalSM 都从 `~/.config/localsm/` 读取配置、把运行状态写到
+`~/.local/state/localsm/`，与仓库放在哪里无关。想把两者留在仓库内开发，
+设 `LOCALSM_ROOT="$PWD"` 即可。npm 包的说明见
 [`packages/npm/README.md`](packages/npm/README.md)。
 版本发布流程见 [`docs/releasing.md`](docs/releasing.md)。
 
@@ -52,6 +57,10 @@ PyYAML，测试依赖通过 `uv sync --dev` 安装。
 ## 快速上手
 
 ```sh
+# 生成初始配置（不覆盖已有文件），然后按需编辑
+LocalSM init
+$EDITOR ~/.config/localsm/services.yaml
+
 # 查看当前配置和状态
 LocalSM config
 LocalSM status
@@ -61,10 +70,17 @@ LocalSM web
 # 浏览器打开 http://127.0.0.1:8765/
 
 # 启动单个服务；端口冲突时自动从端口池选择
-LocalSM up enva --auto-port
-LocalSM restart enva
-LocalSM logs enva
-LocalSM down enva
+LocalSM up demo --auto-port
+LocalSM restart demo
+LocalSM logs demo
+LocalSM down demo
+```
+
+所有命令都支持 `--json`，脚本请一律使用它；输出形态与退出码见
+[docs/cli-contract.md](docs/cli-contract.md)。
+
+```sh
+LocalSM --json status | jq -r '.[] | select(.state == "running") | .name'
 ```
 
 Web 页面提供服务启停、重启、改端口、日志抽屉、远端扫描、SSH 终端和
@@ -74,6 +90,8 @@ Web 页面提供服务启停、重启、改端口、日志抽屉、远端扫描�
 
 ```text
 LocalSM --version
+LocalSM [--json] [--quiet] ...
+LocalSM init
 LocalSM up [SERVICE] [--port PORT] [--auto-port]
 LocalSM down [SERVICE]
 LocalSM restart [SERVICE] [--port PORT] [--auto-port]
@@ -96,9 +114,9 @@ LocalSM web
 `exec` 使用参数列表直接执行命令，不会替换受管服务进程：
 
 ```sh
-LocalSM exec enva pwd
-LocalSM logs kimi --lines 120
-LocalSM set-port aqp 18080
+LocalSM exec demo pwd
+LocalSM logs demo --lines 120
+LocalSM set-port demo 18080
 ```
 
 `doctor` 默认会扫描 SSH config 中的 Host；网络受限时可用
@@ -117,27 +135,33 @@ LocalSM ssh my-pod --app ghostty
 
 扫描按需并行执行，远端端口探测按 `ss`、`lsof`、`netstat`、`/proc` 顺序
 降级。LocalSM 只读取 `~/.ssh/config`，不会向其中写入 `LocalForward`。
-隧道规则在 `config/tunnels.yaml` 中维护。
+隧道规则维护在 `~/.config/localsm/tunnels.yaml`。
 
 ## 配置
+
+配置放在 `~/.config/localsm/services.yaml`，运行状态放在
+`~/.local/state/localsm/`，与仓库位置无关。`LocalSM init` 生成初始文件，
+仓库内的 [`config/services.example.yaml`](config/services.example.yaml)
+是同一份模板的只读副本。
 
 服务配置示例：
 
 ```yaml
 port_pool: [8000, 8999]
 services:
-  enva:
-    start: "enva serve -p {port}"
+  demo:
+    start: "demo serve -p {port}"
     preferred_port: 8080
-  dshc:
-    start: "dshc up --port {port}"
+  manager:
+    start: "manager up --port {port}"
     set_port:
-      - "dshc config set manager.port {port} --port {current_port}"
-      - "dshc restart --port {current_port}"
+      - "manager config set port {port} --port {current_port}"
+      - "manager restart --port {current_port}"
 ```
 
 完整字段、环境变量和 state 布局见
-[docs/configuration.md](docs/configuration.md)，系统设计见
+[docs/configuration.md](docs/configuration.md)，输出契约见
+[docs/cli-contract.md](docs/cli-contract.md)，系统设计见
 [docs/architecture.md](docs/architecture.md)。
 
 ## 自检、测试与 smoke
@@ -161,4 +185,5 @@ README.md 与 README.en.md 的上述一级章节需要保持同步；新增用�
 
 - npm 直接安装：已提供 `@shendeguize/local-sm`，内置 LocalSM wheel，并会自动安装 `uv`。
 - launchd 原生服务模板：当前只管理 detached 进程，后续可按服务选择系统托管。
+- shell 补全与更完整的 `--help`：当前依赖 README 与 `docs/cli-contract.md`。
 - 远端扫描结果 diff 与通知：当前提供按需扫描和缓存。

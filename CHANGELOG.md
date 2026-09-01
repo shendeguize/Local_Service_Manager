@@ -5,6 +5,40 @@ All notable changes to LocalSM are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-09-01
+
+### Added
+
+- `LocalSM init` writes a commented starter configuration and never overwrites
+  an existing file.
+- Global `--json` and `--quiet` flags on every command, accepted either before
+  or after the subcommand. `docs/cli-contract.md` documents the output shapes
+  and the exit-code convention.
+
+### Changed
+
+- **Breaking.** Configuration now lives in `~/.config/localsm/` and runtime
+  state in `~/.local/state/localsm/`, following the XDG base directories.
+  LocalSM no longer derives these paths from its own install location. Set
+  `LOCALSM_ROOT` to keep both inside a source checkout, or use
+  `LOCALSM_CONFIG_DIR` and `LOCALSM_STATE_DIR` individually.
+- `doctor` derives its service-CLI checks from the configured services instead
+  of a hardcoded list, and reports a missing `services.yaml` as a failure that
+  points at `LocalSM init`.
+- `scripts/smoke.sh` takes its service list from `LocalSM --json config`
+  instead of hardcoded service names.
+- Personal `config/*.yaml` files are no longer tracked; only
+  `config/services.example.yaml` is. `make hygiene` now fails when a real
+  config is committed.
+
+### Fixed
+
+- A wheel or npm installation resolved its configuration directory to a random
+  path inside uv's cache, which never exists and is erased by `uv cache prune`.
+  Nothing reported this: `status` printed nothing, and `doctor` passed every
+  check against a configuration that was not there. Commands now name the
+  configuration path they expect and point at `LocalSM init`.
+
 ## [0.1.2] - 2026-09-01
 
 ### Changed

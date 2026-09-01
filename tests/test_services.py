@@ -2,15 +2,13 @@ import sys
 
 import pytest
 
-from localsm import config, logs, ports, services
+from localsm import ports, services
 from localsm.config import ServiceConfig
 from localsm.services import ServiceError, ServiceManager
 
 
 @pytest.fixture
-def manager(tmp_path, monkeypatch):
-    for module in (config, logs, ports, services):
-        monkeypatch.setattr(module, "STATE_DIR", tmp_path)
+def manager(localsm_home):
     definition = ServiceConfig("demo", f'{sys.executable} -c "import time; time.sleep(30)"', preferred_port=18150)
     return ServiceManager({"demo": definition}, (18150, 18160))
 

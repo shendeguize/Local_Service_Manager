@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+import os
 import socket
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
-from localsm import config, logs, ports, services
+from localsm import logs
 from localsm.remote import parse_ssh_config
 from localsm.services import ServiceConfig, ServiceManager
 
@@ -19,8 +21,12 @@ class LocalSMTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = tempfile.TemporaryDirectory()
         root = Path(self.tempdir.name)
-        for module in (config, logs, ports, services):
-            module.STATE_DIR = root
+        environment = mock.patch.dict(
+            os.environ,
+            {"LOCALSM_CONFIG_DIR": str(root), "LOCALSM_STATE_DIR": str(root)},
+        )
+        environment.start()
+        self.addCleanup(environment.stop)
         self.service = ServiceConfig(
             name="dummy",
             start=f"{sys.executable} -m http.server {{port}} --bind 127.0.0.1",

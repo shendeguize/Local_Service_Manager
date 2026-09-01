@@ -2,6 +2,11 @@ state/*
 !state/.gitkeep
 state/logs/*
 !state/logs/.gitkeep
+
+# Personal LocalSM configuration never belongs in the repository; the example
+# is the only tracked YAML here. Real config lives in ~/.config/localsm/.
+config/*.yaml
+!config/*.example.yaml
 .venv/
 __pycache__/
 *.py[cod]

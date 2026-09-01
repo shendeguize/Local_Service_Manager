@@ -7,7 +7,16 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from .config import STATE_DIR, TUNNELS_FILE, ConfigError, ensure_directories, load_services, load_tunnels
+from .config import (
+    ConfigError,
+    ensure_directories,
+    is_configured,
+    load_services,
+    load_tunnels,
+    services_file,
+    state_dir,
+    tunnels_file,
+)
 from .remote import scan_hosts
 
 
@@ -26,17 +35,41 @@ def _check_command(section: str, name: str, command: str, required: bool = True)
     return Check(section, name, "FAIL" if required else "WARN", "未找到")
 
 
+def service_binary(start: str) -> str | None:
+    """Return the executable a service starts, when it is a plain command.
+
+    Start commands are shell strings that may embed {port} or {python}
+    placeholders. Only a literal leading token can be resolved on PATH.
+    """
+    head = start.strip().split(maxsplit=1)
+    if not head:
+        return None
+    command = head[0]
+    if "{" in command or "/" in command or "=" in command:
+        return None
+    return command
+
+
+def configured_service_checks() -> list[Check]:
+    try:
+        services, _ = load_services()
+    except ConfigError:
+        return []
+    checks = []
+    for name in sorted(services):
+        command = service_binary(services[name].start)
+        if command:
+            checks.append(_check_command("服务 CLI", name, command, required=False))
+    return checks
+
+
 def local_checks() -> list[Check]:
     checks = [
         _check_command("本地工具", "uv", "uv"),
         _check_command("本地工具", "ssh", "ssh"),
         _check_command("本地工具", "osascript", "osascript"),
-        _check_command("服务 CLI", "enva", "enva", required=False),
-        _check_command("服务 CLI", "dshc", "dshc", required=False),
-        _check_command("服务 CLI", "aqp", "aqp", required=False),
-        _check_command("服务 CLI", "kimi", "kimi", required=False),
-        _check_command("服务 CLI", "dsh", "dsh", required=False),
     ]
+    checks.extend(configured_service_checks())
     ghostty = Path("/Applications/Ghostty.app")
     checks.append(Check("本地工具", "Ghostty", "PASS" if ghostty.exists() else "WARN", str(ghostty)))
     checks.append(
@@ -47,19 +80,24 @@ def local_checks() -> list[Check]:
             "可导入" if importlib.util.find_spec("flask") else "未安装",
         )
     )
-    try:
-        services, pool = load_services()
-        load_tunnels()
-        checks.append(Check("配置", "services.yaml", "PASS", f"{len(services)} 个服务，端口池 {pool[0]}-{pool[1]}"))
-        checks.append(Check("配置", "tunnels.yaml", "PASS", str(TUNNELS_FILE)))
-    except ConfigError as exc:
-        checks.append(Check("配置", "YAML 校验", "FAIL", str(exc)))
+    if not is_configured():
+        checks.append(
+            Check("配置", "services.yaml", "FAIL", f"{services_file()} 不存在，运行 `LocalSM init` 生成初始配置")
+        )
+    else:
+        try:
+            services, pool = load_services()
+            load_tunnels()
+            checks.append(Check("配置", "services.yaml", "PASS", f"{len(services)} 个服务，端口池 {pool[0]}-{pool[1]}"))
+            checks.append(Check("配置", "tunnels.yaml", "PASS", str(tunnels_file())))
+        except ConfigError as exc:
+            checks.append(Check("配置", "YAML 校验", "FAIL", str(exc)))
     try:
         ensure_directories()
-        probe = STATE_DIR / ".doctor-write-test"
+        probe = state_dir() / ".doctor-write-test"
         probe.write_text("ok\n", encoding="utf-8")
         probe.unlink()
-        checks.append(Check("本地状态", "state 可写", "PASS", str(STATE_DIR)))
+        checks.append(Check("本地状态", "state 可写", "PASS", str(state_dir())))
     except OSError as exc:
         checks.append(Check("本地状态", "state 可写", "FAIL", str(exc)))
     return checks
