@@ -5,6 +5,16 @@ All notable changes to LocalSM are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- A version bump no longer leaves the installed package metadata behind, which
+  failed `make release-preflight` on the release branch until someone
+  reinstalled the package by hand. uv decides whether a local build is current
+  from the files in `cache-keys`, which defaults to `pyproject.toml` alone —
+  and this project reads its version from `src/localsm/__init__.py`.
+
 ## [0.3.3] - 2026-09-01
 
 ### Changed

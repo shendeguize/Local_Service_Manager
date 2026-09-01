@@ -14,6 +14,11 @@ LocalSM = "localsm.cli:main"
 
 [tool.uv]
 package = true
+# The version lives in src/localsm/__init__.py, not in this file, and uv decides
+# whether the installed build is stale by watching pyproject.toml alone. Without
+# this, bumping the version leaves the .dist-info metadata behind until someone
+# reinstalls by hand.
+cache-keys = [{ file = "pyproject.toml" }, { file = "src/localsm/__init__.py" }]
 
 [dependency-groups]
 dev = [
