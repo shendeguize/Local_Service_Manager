@@ -55,8 +55,12 @@ class TunnelManager:
         result = []
         for tunnel in load_tunnels():
             item = dict(tunnel)
-            item["state"] = "running" if self._alive(self._pid(str(item["name"]))) else "stopped"
-            item["pid"] = self._pid(str(item["name"]))
+            pid = self._pid(str(item["name"]))
+            alive = self._alive(pid)
+            item["state"] = "running" if alive else "stopped"
+            # The pidfile outlives the process it names, and reporting a dead
+            # pid reads as though something were still there to signal.
+            item["pid"] = pid if alive else None
             result.append(item)
         return result
 

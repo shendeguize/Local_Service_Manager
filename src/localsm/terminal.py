@@ -16,10 +16,15 @@ def launch_ssh(host: str, app: str = "ghostty") -> None:
         raise TerminalError("host must be a single non-empty value")
     if app == "ghostty":
         command = ["open", "-na", "Ghostty", "--args", "-e", "ssh", host]
+        # `open` hands the window off and exits, so waiting for it costs nothing
+        # and is the only way to notice that Ghostty is not installed; fire and
+        # forget reported a launch that never happened.
         try:
-            subprocess.Popen(command, start_new_session=True)
-        except OSError as exc:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=15, check=False)
+        except (OSError, subprocess.TimeoutExpired) as exc:
             raise TerminalError(f"cannot launch Ghostty: {exc}") from exc
+        if result.returncode:
+            raise TerminalError(result.stderr.strip() or f"open exited {result.returncode}")
         return
     if app == "terminal":
         command = f"ssh {shlex.quote(host)}"

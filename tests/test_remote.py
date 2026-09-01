@@ -29,6 +29,18 @@ def test_parse_listener_formats():
     assert remote._parse_ss("") == []
 
 
+def test_parse_the_proc_fallback_which_writes_bare_ports():
+    """The branch that runs on hosts with no ss, lsof or netstat."""
+    assert remote._parse_ss("36489\n22\n10000\n") == [22, 10000, 36489]
+    assert remote._parse_ss("22\n") == [22]
+
+
+def test_parse_ignores_numbers_that_are_not_a_line_of_their_own():
+    assert remote._parse_ss("Active Internet connections (only servers)\n") == []
+    assert remote._parse_ss("LocalSM: neither ss, lsof, netstat, nor python3 is installed\n") == []
+    assert remote._parse_ss("70000\n") == [], "out of range"
+
+
 def test_scan_hosts_and_tunnel_coverage(localsm_home, monkeypatch):
     monkeypatch.setattr(remote, "parse_ssh_config", lambda: [SSHHost("pod-a"), SSHHost("pod-b")])
     monkeypatch.setattr(remote, "_scan_one", lambda host, timeout: RemoteScan(host.alias, True, [8080]))

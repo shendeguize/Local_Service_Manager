@@ -10,7 +10,7 @@ from typing import Any
 
 from flask import Flask, jsonify, render_template, request
 
-from .config import config_dir, load_services, services_file, state_dir, tunnels_file
+from .config import ConfigError, config_dir, load_services, services_file, state_dir, tunnels_file
 from .launchd import LaunchdError
 from .remote import scan_hosts
 from .services import ServiceError, ServiceManager
@@ -140,7 +140,14 @@ def create_app() -> Flask:
         elif action == "restart":
             result = manager.restart(name, requested_port=payload.get("port"), auto_port=bool(payload.get("auto_port")))
         elif action == "set-port":
-            result = manager.set_port(name, int(payload["port"]))
+            # Unvalidated, a missing or non-numeric port raised KeyError or
+            # ValueError and the caller got Flask's HTML 500 page instead of the
+            # JSON error every other failure here returns.
+            try:
+                port = int(payload["port"])
+            except (KeyError, TypeError, ValueError):
+                raise ServiceError(f"set-port needs a numeric port, got {payload.get('port')!r}") from None
+            result = manager.set_port(name, port)
         else:
             return jsonify({"error": f"unknown action {action}"}), 404
         return jsonify(result.as_dict() if result else {"name": name, "state": "stopped"})
@@ -195,7 +202,10 @@ def create_app() -> Flask:
     def local_error(error: Exception) -> Any:
         return jsonify({"error": str(error)}), 400
 
-    for error_type in (ServiceError, TunnelError, TerminalError, LaunchdError):
+    # ConfigError included because a half-typed services.yaml is a normal state
+    # while editing, and the dashboard answering with Flask's HTML 500 page hid
+    # the YAML error that says which line to fix.
+    for error_type in (ConfigError, ServiceError, TunnelError, TerminalError, LaunchdError):
         app.register_error_handler(error_type, local_error)
 
     return app

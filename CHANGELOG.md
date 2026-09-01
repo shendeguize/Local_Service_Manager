@@ -5,6 +5,40 @@ All notable changes to LocalSM are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- A service's `env` now covers the same commands `working_dir` does. It reached
+  only `start`, so a service needing a token to come up ran without it when
+  being stopped, asked for its status, told to change port, or used as the
+  context for `LocalSM exec`.
+- `logs --lines` requires a positive count. Zero printed the whole log, since a
+  tail of `[-0:]` is the entire list, and a negative count dropped that many
+  lines off the front instead.
+- A taken preferred port now says which port is in the way and that
+  `--auto-port` opens the pool, instead of "no free port found" while the pool
+  sat unused.
+
+### Fixed
+
+- `remote scan` finds the listeners on hosts that have none of `ss`, `lsof` or
+  `netstat`. The `/proc/net/tcp` fallback writes a bare port per line and the
+  parser required a colon, so the scan reported no open ports at all on the
+  slim images these hosts often are — which also left tunnel coverage blank.
+- `edit tunnels` summarises the tunnels that changed. It diffed the services
+  either way, so it reported that no service definitions had changed and said
+  nothing about the file just edited.
+- The dashboard answers with JSON rather than an HTML 500 page when a
+  `set-port` request carries no usable port, or when `services.yaml` does not
+  parse — the state it is in while being edited.
+- `LocalSM ssh --app ghostty` reports a launch that failed. It never waited for
+  `open`, so a missing Ghostty still produced `{"launched": ...}`.
+- `tunnel list` reports no pid for a stopped tunnel instead of the dead one left
+  in its pidfile.
+- The CLI contract documents `enable`, `disable`, and both forms of `edit`, and
+  states that `completion` ignores `--json`.
+
 ## [0.3.2] - 2026-09-01
 
 ### Fixed

@@ -73,7 +73,8 @@ services:
 - `url_from_log`：从日志中解析实际 URL，保留 URL fragment（例如 Kimi
   的 `#token=...`）。
 - `working_dir`：启动、停止、exec 命令使用的工作目录。
-- `env`：附加环境变量。
+- `env`：附加环境变量。与 `working_dir` 覆盖同一批命令——`start`、`stop`、
+  `set_port`、`status_cmd` 以及 `LocalSM exec`，都在这些变量下运行。
 
 命令模板可用变量：
 

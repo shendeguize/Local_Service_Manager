@@ -69,6 +69,14 @@ rather than an array.
 | `tunnel rm` | `{"removed": name}` |
 | `tunnel list` / `tunnel ensure` | An array of tunnel objects |
 | `ssh` | `{"launched": host, "app": "ghostty"\|"terminal"}` |
+| `enable` | `{"name", "label", "enabled": bool, "port": int, "plist", "status": {...}}` |
+| `disable` | `{"name", "label", "enabled": bool, "was_enabled": bool, "status": {...}}` |
+| `edit` (services) | `{"path", "added": [str], "removed": [str], "changed": [str], "restart_required": [str]}` |
+| `edit tunnels` | `{"path", "added": [str], "removed": [str], "changed": [str], "ensure_required": [str]}` |
+
+`completion` ignores `--json`: its output is consumed by the shell directly, so
+`zsh` and `bash` emit the completion script itself and `services` emits one
+service name per line.
 
 A tunnel object carries `name`, `host`, `local_port`, `remote_host`, and
 `remote_port`; `list` and `ensure` add `state` and `pid`.
