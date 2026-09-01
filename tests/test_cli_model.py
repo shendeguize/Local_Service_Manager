@@ -1,4 +1,5 @@
 import argparse
+import shutil
 import subprocess
 
 import pytest
@@ -106,6 +107,8 @@ def test_completion_scripts_delegate_service_names(root):
 
 @pytest.mark.parametrize(("shell", "interpreter"), [("zsh", "zsh"), ("bash", "bash")])
 def test_generated_completions_are_valid_shell(root, shell, interpreter, tmp_path):
+    if shutil.which(interpreter) is None:
+        pytest.skip(f"{interpreter} is not installed")
     script = tmp_path / f"completion.{shell}"
     script.write_text(render(shell, root), encoding="utf-8")
     result = subprocess.run([interpreter, "-n", str(script)], capture_output=True, text=True, check=False)

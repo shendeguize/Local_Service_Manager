@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from conftest import FakeResult, stub_subprocess
 
 from localsm import launchd
 
@@ -16,13 +17,6 @@ LIST_OUTPUT = """{
 """
 
 
-class FakeResult:
-    def __init__(self, returncode=0, stdout="", stderr=""):
-        self.returncode = returncode
-        self.stdout = stdout
-        self.stderr = stderr
-
-
 @pytest.fixture
 def agents(tmp_path, monkeypatch):
     """Redirect ~/Library/LaunchAgents so no real agent is ever written."""
@@ -32,26 +26,10 @@ def agents(tmp_path, monkeypatch):
     return directory
 
 
-class LaunchctlRecorder:
-    """Record launchctl invocations and reply with canned results per verb."""
-
-    def __init__(self):
-        self.commands = []
-        self.results = {}
-
-    def __call__(self, command, **kwargs):
-        self.commands.append(tuple(command))
-        return self.results.get(command[1], FakeResult())
-
-    def __getitem__(self, index):
-        return self.commands[index]
-
-
 @pytest.fixture
-def calls(monkeypatch):
-    recorder = LaunchctlRecorder()
-    monkeypatch.setattr(launchd.subprocess, "run", recorder)
-    return recorder
+def calls(launchctl):
+    """The shared launchctl recorder, under the name these tests read best with."""
+    return launchctl
 
 
 def write_agent(agents: Path, name: str, port: int | None = 8100) -> Path:
@@ -233,7 +211,7 @@ def test_launchctl_wraps_process_failures(agents, monkeypatch):
     def fail(command, **kwargs):
         raise subprocess.TimeoutExpired(command, 15)
 
-    monkeypatch.setattr(launchd.subprocess, "run", fail)
+    monkeypatch.setattr(launchd, "subprocess", stub_subprocess(fail))
     with pytest.raises(launchd.LaunchdError, match="failed"):
         launchd.state("demo")
 
