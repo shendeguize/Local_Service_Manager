@@ -1,0 +1,71 @@
+# The demonstration scenario, shared by the simulated dashboard and the VHS
+# recordings so both show the same machine.
+#
+# `services` and `tunnels` are fed to a real LocalSM in a sandbox by
+# scripts/gen_demo_fixtures.py, so the JSON the demo replays is the JSON the CLI
+# actually produces. The start commands are deliberately inert: the generator
+# starts them for real and needs them to sit still and then go away. Because
+# that makes them unreadable as an example of a services.yaml, each one also
+# carries the `shown_as` command the demo displays in its place.
+#
+# `remote` cannot be captured the same way, since these hosts do not exist. Its
+# values are written by hand, and the generator checks the field names against a
+# real scan so a change to the scan payload still breaks the build.
+
+port_pool: [8000, 8099]
+
+services:
+  api:
+    start: "echo 'Uvicorn running on http://127.0.0.1:{port} (Press CTRL+C to quit)'; sleep 900"
+    shown_as: "uv run uvicorn app.main:app --port {port}"
+    preferred_port: 8080
+    url_from_log: true
+    working_dir: "~/work/api"
+  docs:
+    start: "echo 'Local:   http://127.0.0.1:{port}/'; sleep 900"
+    shown_as: "npm run docs:dev -- --port {port}"
+    preferred_port: 8000
+    url_from_log: true
+    working_dir: "~/work/handbook"
+  worker:
+    start: "echo 'worker ready, health endpoint on http://127.0.0.1:{port}/healthz'; sleep 900"
+    shown_as: "uv run python -m app.worker --health-port {port}"
+    preferred_port: 8090
+    url_from_log: true
+  web:
+    start: "echo 'LocalSM dashboard on http://127.0.0.1:{port}/'; sleep 900"
+    shown_as: "LocalSM web --foreground --port {port}"
+    preferred_port: 8765
+    url_from_log: true
+
+tunnels:
+  - name: api-pod
+    host: pod-a
+    local_port: 18080
+    remote_host: 127.0.0.1
+    remote_port: 8080
+  - name: pod-b-grafana
+    host: pod-b
+    local_port: 13000
+    remote_host: 127.0.0.1
+    remote_port: 3000
+
+# Which services the demo starts out running, and how the dashboard should
+# present them. Everything else starts stopped.
+initial:
+  running: [web, docs]
+  launchd: [web]
+  # A live tunnel and a dead one, so `ensure` has something to do.
+  tunnels: [api-pod]
+
+remote:
+  - host: pod-a
+    reachable: true
+    ports: [22, 8080, 9090]
+  - host: pod-b
+    reachable: true
+    ports: [22, 3000, 5432]
+  - host: build-box
+    reachable: false
+    ports: []
+    error: "ssh: connect to host build-box port 22: Operation timed out"

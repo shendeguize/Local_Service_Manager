@@ -1,0 +1,162 @@
+{
+  "generated_by": "scripts/gen_demo_fixtures.py",
+  "config": {
+    "config_dir": "/Users/you/.config/localsm",
+    "edit_command": "LocalSM edit",
+    "editable": false,
+    "port_pool": [
+      8000,
+      8099
+    ],
+    "services": [
+      {
+        "name": "api",
+        "preferred_port": 8080,
+        "start": "uv run uvicorn app.main:app --port {port}",
+        "url_from_log": true,
+        "working_dir": "~/work/api"
+      },
+      {
+        "name": "docs",
+        "preferred_port": 8000,
+        "start": "npm run docs:dev -- --port {port}",
+        "url_from_log": true,
+        "working_dir": "~/work/handbook"
+      },
+      {
+        "name": "web",
+        "preferred_port": 8765,
+        "start": "LocalSM web --foreground --port {port}",
+        "url_from_log": true,
+        "working_dir": null
+      },
+      {
+        "name": "worker",
+        "preferred_port": 8090,
+        "start": "uv run celery -A app.worker worker --port {port}",
+        "url_from_log": true,
+        "working_dir": null
+      }
+    ],
+    "services_file": "/Users/you/.config/localsm/services.yaml",
+    "state_dir": "/Users/you/.local/state/localsm",
+    "tunnels_file": "/Users/you/.config/localsm/tunnels.yaml"
+  },
+  "services": [
+    {
+      "error": null,
+      "log": "",
+      "managed_by": null,
+      "name": "api",
+      "pid": null,
+      "port": null,
+      "state": "stopped",
+      "url": null
+    },
+    {
+      "error": null,
+      "log": "Local:   http://127.0.0.1:8000/",
+      "managed_by": "detached",
+      "name": "docs",
+      "pid": 40137,
+      "port": 8000,
+      "state": "running",
+      "url": "http://127.0.0.1:8000/"
+    },
+    {
+      "error": null,
+      "log": "LocalSM dashboard on http://127.0.0.1:8765/",
+      "managed_by": "launchd",
+      "name": "web",
+      "pid": 40274,
+      "port": 8765,
+      "state": "running",
+      "url": "http://127.0.0.1:8765/"
+    },
+    {
+      "error": null,
+      "log": "",
+      "managed_by": null,
+      "name": "worker",
+      "pid": null,
+      "port": null,
+      "state": "stopped",
+      "url": null
+    }
+  ],
+  "logs": {
+    "web": {
+      "content": "LocalSM dashboard on http://127.0.0.1:8765/",
+      "lines": 40,
+      "service": "web"
+    },
+    "docs": {
+      "content": "Local:   http://127.0.0.1:8000/",
+      "lines": 40,
+      "service": "docs"
+    }
+  },
+  "tunnels": [
+    {
+      "host": "pod-a",
+      "local_port": 18080,
+      "name": "api-pod",
+      "pid": 41000,
+      "remote_host": "127.0.0.1",
+      "remote_port": 8080,
+      "state": "running"
+    },
+    {
+      "host": "pod-b",
+      "local_port": 13000,
+      "name": "pod-b-grafana",
+      "pid": null,
+      "remote_host": "127.0.0.1",
+      "remote_port": 3000,
+      "state": "stopped"
+    }
+  ],
+  "remote": [
+    {
+      "host": "pod-a",
+      "reachable": true,
+      "ports": [
+        22,
+        8080,
+        9090
+      ],
+      "error": null,
+      "tunnels": {
+        "22": [],
+        "8080": [
+          "api-pod"
+        ],
+        "9090": []
+      }
+    },
+    {
+      "host": "pod-b",
+      "reachable": true,
+      "ports": [
+        22,
+        3000,
+        5432
+      ],
+      "error": null,
+      "tunnels": {
+        "22": [],
+        "3000": [
+          "pod-b-grafana"
+        ],
+        "5432": []
+      }
+    },
+    {
+      "host": "build-box",
+      "reachable": false,
+      "ports": [],
+      "error": "ssh: connect to host build-box port 22: Operation timed out",
+      "tunnels": {}
+    }
+  ]
+}

@@ -5,6 +5,26 @@ All notable changes to LocalSM are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- A website at <https://shendeguize.github.io/Local_Service_Manager/>, built
+  from the same sources as the product: the documentation is copied out of
+  `docs/`, and the simulated dashboard it hosts is the real dashboard with only
+  its HTTP layer replaced by an in-browser state machine. The payloads that
+  state machine starts from are recorded from a real LocalSM, so the site build
+  fails when the web API changes without them.
+
+### Fixed
+
+- `LocalSM logs` no longer leaves the shell prompt on the same line as the
+  output when a log's last line has no newline.
+- Dashboard icons rendered in a context without their own size rule, such as
+  the host column of the remote table, no longer stretch to fill the cell.
+- The dashboard's service table shows its state in the same language as the
+  rest of the interface.
+
 ## [0.3.0] - 2026-09-01
 
 ### Added

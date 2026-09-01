@@ -26,3 +26,15 @@ updates:
       npm-dependencies:
         patterns:
           - "*"
+
+  # The website's dependencies are separate from the launcher's: they only ever
+  # affect what Pages serves, so grouping them apart keeps a docs-tooling bump
+  # from looking like a change to the published package.
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+    groups:
+      site-dependencies:
+        patterns:
+          - "*"

@@ -1,0 +1,38 @@
+/* Tweaks to Starlight's docs chrome. The landing pages are styled separately in
+   landing.css and share nothing with this file. */
+
+:root {
+  --sl-color-accent-low: #17274d;
+  --sl-color-accent: #1f6feb;
+  --sl-color-accent-high: #b7d1fb;
+  --sl-content-width: 50rem;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #d3e2fd;
+  --sl-color-accent: #1a5fd0;
+  --sl-color-accent-high: #10305f;
+}
+
+/* Chinese text needs a font stack that actually has the glyphs, and slightly
+   looser lines than the Latin default. */
+:root[lang='zh-CN'] {
+  --sl-font:
+    ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    sans-serif;
+}
+
+:root[lang='zh-CN'] .sl-markdown-content {
+  line-height: 1.8;
+}
+
+/* Most tables here map a flag or field to a sentence of explanation, which reads
+   badly when the first column wraps. */
+.sl-markdown-content table {
+  font-size: var(--sl-text-sm);
+}
+
+.sl-markdown-content td:first-child,
+.sl-markdown-content th:first-child {
+  white-space: nowrap;
+}

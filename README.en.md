@@ -8,6 +8,15 @@ LocalSM has no resident supervisor. Services run detached and are tracked with
 pidfiles, port probes, and logs, so a LocalSM exit does not automatically stop
 the services it started.
 
+![LocalSM terminal recording: status lists the services, up starts one of them,
+and logs and --json status show its output](site/public/media/services.gif)
+
+The website is at <https://shendeguize.github.io/Local_Service_Manager/>, with
+the same bilingual documentation and a
+[simulated dashboard](https://shendeguize.github.io/Local_Service_Manager/demo/):
+the real dashboard front end over a fake backend in your browser, so you can
+click through it without installing anything.
+
 The full documentation is in [docs/en/index.md](docs/en/index.md) (中文:
 [docs/zh/index.md](docs/zh/index.md)): installation, quickstart, configuration,
 services, launchd, tunnels, remote scans, the web dashboard, the CLI reference,
@@ -49,7 +58,9 @@ However it is installed, LocalSM reads configuration from
 independently of where the repository lives. Set `LOCALSM_ROOT="$PWD"` to keep
 both inside the checkout while developing. See
 [`packages/npm/README.md`](packages/npm/README.md) for details.
-See [`docs/releasing.md`](docs/releasing.md) for the release process.
+See [`docs/releasing.md`](docs/releasing.md) for the release process, and
+[`docs/website.md`](docs/website.md) for how the website and its simulated
+dashboard are built.
 
 ### Run from the project
 

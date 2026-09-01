@@ -2,6 +2,7 @@ import { api } from "./api.js";
 import { escapeHtml, icon, openDrawer, openModal, setBusy, showToast } from "./ui.js";
 
 const serviceGlyph = (name) => (name === "web" ? "W" : name.slice(0, 1).toUpperCase());
+const STATE_LABELS = { running: "运行中", stopped: "已停止", error: "异常" };
 
 export function createServicesPanel({ root, onChanged }) {
   let rows = [];
@@ -18,7 +19,7 @@ export function createServicesPanel({ root, onChanged }) {
       const badge = launchd ? '<span class="managed-badge" title="由 launchd 托管；用 LocalSM disable 交回">launchd</span>' : "";
       return `<tr>
         <td><div class="service-name"><span class="service-icon">${escapeHtml(serviceGlyph(service.name))}</span><span>${escapeHtml(service.name)}</span>${badge}</div></td>
-        <td><span class="status ${status}">${escapeHtml(service.state)}</span></td>
+        <td><span class="status ${status}"${service.error ? ` title="${escapeHtml(service.error)}"` : ""}>${escapeHtml(STATE_LABELS[status] ?? service.state)}</span></td>
         <td class="mono">${service.pid || '<span class="muted">—</span>'}</td>
         <td class="mono">${service.port || '<span class="muted">—</span>'}</td>
         <td>${service.url ? `<div class="url-cell"><a href="${escapeHtml(service.url)}" target="_blank" rel="noreferrer">${escapeHtml(service.url)}</a><button class="copy-button" data-copy="${escapeHtml(service.url)}" title="复制 URL">${icon("copy")}</button></div>` : '<span class="muted">—</span>'}</td>

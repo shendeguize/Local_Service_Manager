@@ -1,0 +1,96 @@
+name: Site
+
+# The website is built from the same sources as the product: docs/ becomes the
+# documentation and src/localsm/static becomes the simulated dashboard. Any of
+# those changing is a reason to rebuild, and a pull request builds without
+# deploying so a broken site is caught before it merges.
+#
+# The two path lists below are deliberately identical; GitHub Actions does not
+# support YAML anchors, so they have to be kept in step by hand.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "site/**"
+      - "docs/**"
+      - "src/localsm/static/**"
+      - "src/localsm/templates/**"
+      - "scripts/sync_site_docs.py"
+      - "scripts/build_demo.py"
+      - "scripts/gen_demo_fixtures.py"
+      - ".github/workflows/site.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - "docs/**"
+      - "src/localsm/static/**"
+      - "src/localsm/templates/**"
+      - "scripts/sync_site_docs.py"
+      - "scripts/build_demo.py"
+      - "scripts/gen_demo_fixtures.py"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: uv sync --dev --locked
+
+      # The demo replays recorded web API payloads. If the API has changed, the
+      # recording is stale and the demo would misrepresent the product, so the
+      # site build fails rather than shipping it.
+      - name: Check the demo fixtures against the web API
+        run: uv run python scripts/gen_demo_fixtures.py --check
+
+      - run: make site-docs
+      - run: make demo
+      - run: npm ci
+        working-directory: site
+      - run: npm run build
+        working-directory: site
+
+      - uses: actions/configure-pages@v6
+        if: github.event_name != 'pull_request'
+      - uses: actions/upload-pages-artifact@v5
+        if: github.event_name != 'pull_request'
+        with:
+          path: site/dist
+
+  deploy:
+    name: deploy
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
