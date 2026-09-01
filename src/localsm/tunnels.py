@@ -17,6 +17,17 @@ class TunnelError(RuntimeError):
     """Raised when a tunnel cannot be created or maintained."""
 
 
+def _last_log_line(path: Path, offset: int = 0) -> str:
+    """The last non-empty line written to a tunnel log after `offset`."""
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            handle.seek(offset)
+            lines = [line.strip() for line in handle if line.strip()]
+    except OSError:
+        return ""
+    return lines[-1] if lines else ""
+
+
 class TunnelManager:
     def __init__(self) -> None:
         ensure_directories()
@@ -77,7 +88,10 @@ class TunnelManager:
             f"{local_port}:{remote_host}:{remote_port}",
             host,
         ]
-        log = (state_dir() / "logs" / f"tunnel-{name}.log").open("a", encoding="utf-8")
+        log_path = state_dir() / "logs" / f"tunnel-{name}.log"
+        # Only what this attempt writes is worth quoting back on failure.
+        already_logged = log_path.stat().st_size if log_path.exists() else 0
+        log = log_path.open("a", encoding="utf-8")
         try:
             process = subprocess.Popen(
                 command,
@@ -94,7 +108,11 @@ class TunnelManager:
                 log.close()
         time.sleep(0.2)
         if process.poll() is not None:
-            raise TunnelError(f"ssh tunnel exited with code {process.returncode}")
+            # ssh explained itself into the log; an exit code alone would make
+            # the reader go find that file to learn it was a typo in the host.
+            reason = _last_log_line(log_path, already_logged)
+            detail = f": {reason}" if reason else ""
+            raise TunnelError(f"ssh tunnel exited with code {process.returncode}{detail}")
         # The tunnel is deliberately detached; do not let Popen's finalizer
         # warn while the SSH process continues under its pidfile.
         process.returncode = 0

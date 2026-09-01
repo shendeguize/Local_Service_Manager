@@ -73,3 +73,46 @@ def test_service_checks_come_from_the_user_configuration(localsm_home, monkeypat
 def test_service_checks_are_empty_for_invalid_configuration(localsm_home):
     (localsm_home / "services.yaml").write_text("services: [1, 2]\n", encoding="utf-8")
     assert doctor.configured_service_checks() == []
+
+
+def write_tunnels(home, *hosts):
+    entries = "".join(
+        f"  - name: t{index}\n    host: {host}\n    local_port: {18000 + index}\n    remote_port: 80\n"
+        for index, host in enumerate(hosts)
+    )
+    (home / "tunnels.yaml").write_text(f"tunnels:\n{entries}", encoding="utf-8")
+
+
+def test_remote_check_is_skipped_when_no_tunnel_is_configured(localsm_home, monkeypatch):
+    monkeypatch.setattr(doctor, "scan_hosts", lambda *a, **k: pytest.fail("must not scan"))
+    (check,) = doctor.remote_checks()
+    assert check.status == "PASS"
+    assert "没有配置隧道" in check.detail
+
+
+def test_remote_check_scans_only_the_hosts_tunnels_use(localsm_home, monkeypatch):
+    write_tunnels(localsm_home, "pod-a", "pod-b", "pod-a")
+    scanned = []
+
+    def fake_scan(hosts, timeout=8):
+        scanned.append(list(hosts))
+        return [{"host": host, "reachable": True} for host in hosts]
+
+    monkeypatch.setattr(doctor, "scan_hosts", fake_scan)
+    (check,) = doctor.remote_checks()
+    assert scanned == [["pod-a", "pod-b"]], "a host used twice is scanned once"
+    assert check.status == "PASS"
+    assert check.detail == "2/2 可达"
+
+
+def test_remote_check_names_the_unreachable_tunnel_hosts(localsm_home, monkeypatch):
+    write_tunnels(localsm_home, "pod-a", "pod-b")
+    monkeypatch.setattr(
+        doctor,
+        "scan_hosts",
+        lambda hosts, timeout=8: [{"host": host, "reachable": host == "pod-a"} for host in hosts],
+    )
+    (check,) = doctor.remote_checks()
+    assert check.status == "FAIL"
+    assert "pod-b" in check.detail
+    assert "pod-a" not in check.detail

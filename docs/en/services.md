@@ -59,6 +59,10 @@ LocalSM up api --auto-port      # allow a different free port from the pool
 LocalSM set-port api 9000           # change the port the way the service defines
 ```
 
+`up` makes sure a service is running; it does not move one. Asking a running
+service for a different port with `up --port 9000` is an error pointing you at
+`restart --port 9000`, rather than a success that changed nothing.
+
 The `set-port` command runs the service's `set_port` command sequence when one is
 configured, and otherwise restarts on the new port. That makes "change the port"
 work for services that need a config file rewritten and reloaded. `set_port`
@@ -73,7 +77,7 @@ Each service in `status` carries:
 | --- | --- |
 | `state` | `running` / `stopped` |
 | `pid` | Process id, `null` when not running or unknown |
-| `port` | Current port |
+| `port` | Current port. The log wins when it reports one, since a service may bind elsewhere; otherwise the port LocalSM allocated |
 | `url` | Address, read from the log when `url_from_log` is on |
 | `managed_by` | `detached` / `launchd` / `null` |
 

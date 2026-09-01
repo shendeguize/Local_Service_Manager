@@ -103,14 +103,38 @@ def local_checks() -> list[Check]:
     return checks
 
 
+def tunnel_hosts() -> list[str]:
+    """The ssh hosts LocalSM's own tunnels depend on."""
+    try:
+        tunnels = load_tunnels()
+    except ConfigError:
+        return []
+    return sorted({tunnel["host"] for tunnel in tunnels})
+
+
 def remote_checks(timeout: int = 8) -> list[Check]:
-    results = scan_hosts(timeout=timeout)
-    if not results:
-        return [Check("远端 SSH", "Host 扫描", "WARN", "ssh config 中没有可扫描的 Host")]
-    reachable = sum(1 for item in results if item["reachable"])
-    unreachable = len(results) - reachable
-    status = "PASS" if unreachable == 0 else "FAIL"
-    return [Check("远端 SSH", "Host 连通性", status, f"{reachable}/{len(results)} 可达")]
+    """Check the hosts LocalSM was told about, not everything in ssh config.
+
+    A host in ~/.ssh/config that no tunnel references is none of LocalSM's
+    business: failing on it would make `doctor` report someone else's outage,
+    and scanning it would open a connection to a machine the operator never
+    pointed LocalSM at.
+    """
+    hosts = tunnel_hosts()
+    if not hosts:
+        return [Check("远端 SSH", "隧道 Host", "PASS", "没有配置隧道，跳过远端检查")]
+    results = scan_hosts(hosts, timeout=timeout)
+    unreachable = sorted(item["host"] for item in results if not item["reachable"])
+    if unreachable:
+        return [
+            Check(
+                "远端 SSH",
+                "隧道 Host 连通性",
+                "FAIL",
+                f"{len(results) - len(unreachable)}/{len(results)} 可达，不可达：{'、'.join(unreachable)}",
+            )
+        ]
+    return [Check("远端 SSH", "隧道 Host 连通性", "PASS", f"{len(results)}/{len(results)} 可达")]
 
 
 def run_doctor(local_only: bool = False, timeout: int = 8) -> list[Check]:

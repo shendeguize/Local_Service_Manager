@@ -52,6 +52,30 @@ def test_add_rejects_duplicate_and_ssh_failure(tunnel_manager, monkeypatch):
     assert tunnel_manager.list() == []
 
 
+def test_a_failed_tunnel_quotes_what_ssh_said(tunnel_manager, monkeypatch):
+    monkeypatch.setattr(tunnels, "port_available", lambda port: True)
+
+    def popen(*args, **kwargs):
+        kwargs["stdout"].write("ssh: Could not resolve hostname pod: unknown\n")
+        return FakeProcess(255)
+
+    monkeypatch.setattr(tunnels.subprocess, "Popen", popen)
+    with pytest.raises(TunnelError, match="code 255: ssh: Could not resolve hostname pod: unknown"):
+        tunnel_manager.add("bad", "pod", 18184, 8080)
+
+
+def test_a_failure_quotes_this_attempt_not_an_older_one(tunnel_manager, monkeypatch, localsm_home):
+    monkeypatch.setattr(tunnels, "port_available", lambda port: True)
+    log = localsm_home / "logs" / "tunnel-bad.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    log.write_text("ssh: an unrelated failure from last week\n", encoding="utf-8")
+    monkeypatch.setattr(tunnels.subprocess, "Popen", lambda *args, **kwargs: FakeProcess(255))
+    with pytest.raises(TunnelError) as failure:
+        tunnel_manager.add("bad", "pod", 18185, 8080)
+    assert "last week" not in str(failure.value)
+    assert str(failure.value).endswith("code 255")
+
+
 def test_add_rejects_invalid_port(tunnel_manager):
     with pytest.raises(TunnelError, match="between 1 and 65535"):
         tunnel_manager.add("bad", "pod", 0, 8080)

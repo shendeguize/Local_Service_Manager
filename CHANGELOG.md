@@ -16,8 +16,26 @@ and versions follow [Semantic Versioning](https://semver.org/).
   state machine starts from are recorded from a real LocalSM, so the site build
   fails when the web API changes without them.
 
+### Changed
+
+- `up` refuses an explicit `--port` that it cannot honour instead of reporting
+  success without moving anything. A service already running on the requested
+  port is still a no-op, and `--auto-port` is still satisfied by any running
+  service.
+- `doctor` checks the ssh hosts LocalSM's own tunnels use, rather than every
+  host in `~/.ssh/config`. An unrelated machine being down is not a LocalSM
+  fault, and a diagnostic should not open connections to hosts nobody pointed
+  LocalSM at. With no tunnels configured the section is skipped.
+
 ### Fixed
 
+- `status` reports the port LocalSM allocated when a running service's log does
+  not mention one. A service whose stdout is still buffered — including the
+  `python3 -m http.server` example `init` writes — appeared to be running on no
+  port at all, in both the CLI and the dashboard.
+- A tunnel that fails to start quotes what ssh said, instead of only its exit
+  code. "exited with code 255" sent the reader to the log file to discover a
+  misspelled host.
 - `LocalSM logs` no longer leaves the shell prompt on the same line as the
   output when a log's last line has no newline.
 - Dashboard icons rendered in a context without their own size rule, such as
