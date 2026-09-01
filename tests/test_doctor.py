@@ -23,6 +23,30 @@ def test_print_report_exit_code(capsys):
     assert "bad" in output
 
 
+def test_each_section_gets_one_heading(capsys):
+    doctor.print_report(
+        [
+            doctor.Check("tools", "uv", "PASS", "ok"),
+            doctor.Check("services", "api", "PASS", "ok"),
+            doctor.Check("tools", "ghostty", "PASS", "ok"),
+        ]
+    )
+    output = capsys.readouterr().out
+    assert output.count("[tools]") == 1
+    assert output.index("[tools]") < output.index("[services]"), "first appearance sets the order"
+    # Both tool checks belong under the single heading, ahead of the next one.
+    assert output.index("uv") < output.index("[services]")
+    assert output.index("ghostty") < output.index("[services]")
+
+
+def test_local_checks_keep_the_tools_together(localsm_home, monkeypatch):
+    (localsm_home / "services.yaml").write_text('services:\n  alpha:\n    start: "alpha serve"\n', encoding="utf-8")
+    monkeypatch.setattr(doctor.shutil, "which", lambda command: "/usr/bin/" + command)
+    sections = [check.section for check in doctor.local_checks()]
+    last_tool = max(index for index, section in enumerate(sections) if section == "本地工具")
+    assert sections.index("服务 CLI") > last_tool, "the service checks must not split the local tools"
+
+
 def test_local_only_checks_are_structured(monkeypatch):
     monkeypatch.setattr(doctor.shutil, "which", lambda command: "/usr/bin/" + command)
     monkeypatch.setattr(doctor.Path, "exists", lambda path: True)
