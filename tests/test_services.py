@@ -64,11 +64,28 @@ def test_a_logged_port_wins_over_the_allocated_one(manager, monkeypatch):
     assert manager.status("demo").port == 18159
 
 
-def test_a_stopped_service_reports_no_port(manager):
+def test_a_stopped_service_reports_where_it_would_come_back(manager):
     ports.save_port("demo", 18153)
     result = manager.status("demo")
     assert result.state == "stopped"
-    assert result.port is None
+    assert result.port == 18153
+
+
+def test_a_stopped_service_advertises_no_address(manager, monkeypatch):
+    """The dashboard turns a url into a link, and nothing is listening."""
+    manager.services["demo"] = ServiceConfig("demo", "true", url_from_log=True)
+    monkeypatch.setattr(services, "read_log", lambda directory, name: "Serving on http://127.0.0.1:18153/\n")
+    result = manager.status("demo")
+    assert result.state == "stopped"
+    assert result.url is None
+
+
+def test_a_running_service_still_advertises_its_address(manager, monkeypatch):
+    manager.services["demo"] = ServiceConfig("demo", "true", url_from_log=True)
+    monkeypatch.setattr(services, "read_log", lambda directory, name: "Serving on http://127.0.0.1:18153/\n")
+    monkeypatch.setattr(manager, "_read_pid", lambda name: 4321)
+    monkeypatch.setattr(manager, "_pid_alive", lambda pid: True)
+    assert manager.status("demo").url == "http://127.0.0.1:18153/"
 
 
 def running_on(manager, monkeypatch, port, managed_by="detached"):
