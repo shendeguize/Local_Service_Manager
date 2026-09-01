@@ -15,6 +15,7 @@ its field names are checked against a real scan of an unknown host.
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import os
 import subprocess
@@ -237,6 +238,13 @@ def main() -> int:
                 f"{TARGET.relative_to(ROOT)} is out of date with the web API; run `make demo-fixtures`.",
                 file=sys.stderr,
             )
+            difference = difflib.unified_diff(
+                current.splitlines(keepends=True),
+                rendered.splitlines(keepends=True),
+                fromfile="committed",
+                tofile="captured",
+            )
+            sys.stderr.writelines(difference)
             return 1
         print("Demo fixtures match the web API.")
         return 0
