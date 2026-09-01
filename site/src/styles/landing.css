@@ -1,0 +1,319 @@
+/* Landing page styling. Kept separate from site.css, which only tweaks
+   Starlight's docs chrome. */
+
+:root {
+  --ink: #10131a;
+  --ink-soft: #4a5262;
+  --paper: #fbfbfd;
+  --panel: #ffffff;
+  --line: #e2e5ec;
+  --accent: #1f6feb;
+  --accent-ink: #ffffff;
+  --terminal: #14171f;
+  --terminal-ink: #d8dee9;
+  --radius: 12px;
+  --measure: 68ch;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #eef1f6;
+    --ink-soft: #a2abbd;
+    --paper: #0c0e13;
+    --panel: #14171e;
+    --line: #262b36;
+    --accent: #4d8ef7;
+    --terminal: #080a0e;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    sans-serif;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+a {
+  color: var(--accent);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem clamp(1rem, 5vw, 3rem);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+.wordmark {
+  font-weight: 650;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.topbar nav {
+  margin-left: auto;
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+
+.topbar nav a {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.topbar nav a:hover,
+.topbar nav a:focus-visible {
+  color: var(--ink);
+}
+
+.topbar nav a.language {
+  color: var(--accent);
+}
+
+main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 5vw, 3rem) 4rem;
+}
+
+section {
+  padding: clamp(2.5rem, 6vw, 4.5rem) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+section:last-of-type {
+  border-bottom: 0;
+}
+
+.hero {
+  padding-top: clamp(3rem, 9vw, 6rem);
+}
+
+.hero h1 {
+  font-size: clamp(1.9rem, 5.2vw, 3.1rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+  max-width: 24ch;
+}
+
+.summary {
+  font-size: clamp(1.02rem, 2.1vw, 1.2rem);
+  color: var(--ink-soft);
+  max-width: var(--measure);
+  margin: 0 0 2rem;
+}
+
+h2 {
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  letter-spacing: -0.01em;
+  margin: 0 0 1.25rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.button {
+  display: inline-block;
+  padding: 0.6rem 1.15rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  font-weight: 550;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+
+.button:hover,
+.button:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+
+.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* The terminal recording sits between the hero and the install steps, so it is
+   the first concrete thing a visitor sees. The frame is dark in both colour
+   schemes because the recording itself is. */
+.cast {
+  margin: 0;
+  padding-bottom: clamp(2.5rem, 6vw, 4.5rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.cast img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--terminal);
+}
+
+.cast figcaption {
+  margin-top: 0.75rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.steps {
+  list-style: none;
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.steps li {
+  counter-increment: step;
+  display: grid;
+  gap: 0.4rem;
+  padding: 1.1rem 1.25rem 1.1rem 3.25rem;
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 1.25rem;
+  top: 1.15rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.step-label {
+  font-weight: 600;
+}
+
+.steps code {
+  display: block;
+  background: var(--terminal);
+  color: var(--terminal-ink);
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.step-note {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.aside {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  max-width: var(--measure);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 1rem;
+}
+
+.card {
+  display: block;
+  padding: 1.35rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.card:hover,
+.card:focus-visible {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.02rem;
+}
+
+.card p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.demo p,
+.docs p {
+  max-width: var(--measure);
+  color: var(--ink-soft);
+}
+
+.demo .button,
+.docs .button {
+  margin: 0.5rem 0 1rem;
+}
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 2rem clamp(1rem, 5vw, 3rem);
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+
+footer p {
+  margin: 0.2rem 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .card {
+    transition: none;
+  }
+
+  .button:hover,
+  .card:hover {
+    transform: none;
+  }
+}

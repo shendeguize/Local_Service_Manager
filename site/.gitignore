@@ -1,0 +1,33 @@
+# build output
+dist/
+# generated types
+.astro/
+
+# Documentation is copied out of docs/ by scripts/sync_site_docs.py, and the
+# demo's dashboard is copied out of src/localsm/static by scripts/build_demo.py.
+# Committing either would mean maintaining two copies of the same file. The
+# fixtures are the exception: regenerating them needs a working LocalSM, so the
+# captured payloads are tracked and reviewed like any other contract.
+src/content/docs/
+public/demo/*
+!public/demo/fixtures.json
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# environment variables
+.env
+.env.production
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/

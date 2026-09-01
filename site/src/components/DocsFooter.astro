@@ -1,0 +1,36 @@
+---
+import Default from '@astrojs/starlight/components/Footer.astro';
+
+// These pages are generated from the repository's docs/ tree, so the footer says
+// where the source is and which language is authoritative. Without it a reader
+// who spots an error has no idea where to send the fix.
+const { locale } = Astro.locals.starlightRoute;
+const english = locale === 'en';
+const source = english ? 'docs/en' : 'docs/zh';
+const repo = 'https://github.com/shendeguize/Local_Service_Manager';
+---
+
+<Default><slot /></Default>
+
+<p class="provenance">
+  {
+    english ? (
+      <>
+        Generated from <a href={`${repo}/tree/main/${source}`}>{source}</a> in the
+        repository. Chinese is the source language; this page mirrors it.
+      </>
+    ) : (
+      <>
+        本页由仓库 <a href={`${repo}/tree/main/${source}`}>{source}</a> 生成。中文为文档源语言。
+      </>
+    )
+  }
+</p>
+
+<style>
+  .provenance {
+    margin-top: 1.5rem;
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+</style>

@@ -7,6 +7,13 @@ LocalSM 是一个面向 macOS 的本地服务与 SSH 资源控制台。你把每
 LocalSM 没有常驻 supervisor：服务以 detached 进程运行，用 pidfile、端口
 探测和日志记录状态。这样即使 LocalSM 退出，已启动的服务也不会被自动杀掉。
 
+![LocalSM 终端录屏：status 列出服务，up 启动其中一个，logs 与 --json status
+显示它的输出](site/public/media/services.gif)
+
+官网：<https://shendeguize.github.io/Local_Service_Manager/>。那里有同样的
+双语文档，还有一个[仿真面板](https://shendeguize.github.io/Local_Service_Manager/demo/)——
+真实的面板前端配上浏览器里的假后端，不装也能点。
+
 完整文档见 [docs/zh/index.md](docs/zh/index.md)（English:
 [docs/en/index.md](docs/en/index.md)）：安装、快速上手、配置、服务、launchd、
 隧道、远端扫描、Web 面板、CLI 参考与故障排查。
@@ -44,7 +51,8 @@ LocalSM --version
 `~/.local/state/localsm/`，与仓库放在哪里无关。想把两者留在仓库内开发，
 设 `LOCALSM_ROOT="$PWD"` 即可。npm 包的说明见
 [`packages/npm/README.md`](packages/npm/README.md)。
-版本发布流程见 [`docs/releasing.md`](docs/releasing.md)。
+版本发布流程见 [`docs/releasing.md`](docs/releasing.md)，官网与仿真面板的构建
+流程见 [`docs/website.md`](docs/website.md)。
 
 ### 项目内使用
 

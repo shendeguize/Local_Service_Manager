@@ -65,11 +65,15 @@ class Output:
                 print(line)
 
     def emit_raw(self, payload: Any, text: str) -> None:
-        """Emit content that is already formatted, such as log output."""
+        """Emit content that is already formatted, such as log output.
+
+        A log whose last line is unterminated would otherwise leave the shell
+        prompt on the same line as the output.
+        """
         if self.as_json:
             print(json.dumps(payload, indent=2, ensure_ascii=False))
         elif not self.quiet:
-            print(text, end="")
+            print(text, end="" if text.endswith("\n") or not text else "\n")
 
 
 def _global_flags() -> argparse.ArgumentParser:

@@ -358,6 +358,20 @@ def test_logs_print_raw_content(sample_config, stub_manager, capsys):
     assert StubManager.instance.calls == [("logs", "demo", 9)]
 
 
+def test_logs_terminate_an_unterminated_last_line(sample_config, stub_manager, capsys, monkeypatch):
+    monkeypatch.setattr(StubManager, "logs", lambda self, name, lines=40: "no trailing newline")
+    code, out, _ = run(["logs", "demo"], capsys)
+    assert code == 0
+    assert out == "no trailing newline\n"
+
+
+def test_logs_of_an_empty_file_print_nothing(sample_config, stub_manager, capsys, monkeypatch):
+    monkeypatch.setattr(StubManager, "logs", lambda self, name, lines=40: "")
+    code, out, _ = run(["logs", "demo"], capsys)
+    assert code == 0
+    assert out == ""
+
+
 def test_logs_json_wraps_content(sample_config, stub_manager, capsys):
     code, out, _ = run(["--json", "logs", "demo"], capsys)
     assert code == 0

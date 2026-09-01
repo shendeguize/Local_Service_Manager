@@ -19,7 +19,7 @@ SOURCE_LANG = "zh"
 TARGET_LANG = "en"
 # Maintainer-facing pages live at the top of docs/ and are deliberately
 # monolingual: their audience already reads this repository.
-MAINTAINER_DOCS = frozenset({"releasing.md"})
+MAINTAINER_DOCS = frozenset({"releasing.md", "website.md"})
 README_SECTIONS = (
     "安装",
     "快速上手",

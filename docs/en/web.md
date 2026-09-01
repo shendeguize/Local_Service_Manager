@@ -5,6 +5,11 @@ screen, start and stop in one click, plus remote scan results and tunnel
 management. It is not a configuration editor; service definitions are read-only
 there.
 
+To try it before installing anything, the website hosts a
+[simulated dashboard](https://shendeguize.github.io/Local_Service_Manager/demo/):
+the same front-end code described here, with the HTTP layer swapped for a state
+machine in your browser and made-up services and hosts for data.
+
 ## Starting it
 
 ```sh

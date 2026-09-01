@@ -1,0 +1,97 @@
+---
+import type { LandingCopy } from '../content/landing';
+import '../styles/landing.css';
+
+interface Props {
+  copy: LandingCopy;
+}
+
+const { copy } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const url = (path: string) => `${base}${path}`.replace(/\/{2,}/g, '/');
+const repo = 'https://github.com/shendeguize/Local_Service_Manager';
+---
+
+<html lang={copy.htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LocalSM — {copy.tagline}</title>
+    <meta name="description" content={copy.summary} />
+    <link rel="icon" href={url('favicon.svg')} type="image/svg+xml" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="wordmark" href={url('')}>LocalSM</a>
+      <nav>
+        {copy.nav.map((item) => <a href={url(item.href)}>{item.label}</a>)}
+        <a href={repo}>GitHub</a>
+        <a class="language" href={url(copy.otherLanguage.href)}>{copy.otherLanguage.label}</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1>{copy.tagline}</h1>
+        <p class="summary">{copy.summary}</p>
+        <div class="actions">
+          <a class="button primary" href={url(copy.primaryCta.href)}>{copy.primaryCta.label}</a>
+          <a class="button" href={url(copy.secondaryCta.href)}>{copy.secondaryCta.label}</a>
+        </div>
+      </section>
+
+      <figure class="cast">
+        <img src={url('media/services.gif')} alt={copy.castAlt} width="1180" height="660" />
+        <figcaption>{copy.castCaption}</figcaption>
+      </figure>
+
+      <section class="install">
+        <h2>{copy.installHeading}</h2>
+        <ol class="steps">
+          {
+            copy.steps.map((step) => (
+              <li>
+                <span class="step-label">{step.label}</span>
+                <code>{step.command}</code>
+                <span class="step-note">{step.note}</span>
+              </li>
+            ))
+          }
+        </ol>
+        <p class="aside">{copy.installNote}</p>
+      </section>
+
+      <section class="features">
+        <h2>{copy.featureHeading}</h2>
+        <div class="grid">
+          {
+            copy.features.map((feature) => (
+              <a class="card" href={url(feature.href)}>
+                <h3>{feature.title}</h3>
+                <p>{feature.body}</p>
+              </a>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="demo">
+        <h2>{copy.demoHeading}</h2>
+        <p>{copy.demoBody}</p>
+        <a class="button primary" href={url(copy.secondaryCta.href)}>{copy.demoCta}</a>
+        <p class="aside">{copy.demoNote}</p>
+      </section>
+
+      <section class="docs">
+        <h2>{copy.docsHeading}</h2>
+        <p>{copy.docsBody}</p>
+        <a class="button" href={url(copy.nav[0]!.href)}>{copy.docsCta}</a>
+      </section>
+    </main>
+
+    <footer>
+      <p>{copy.footerNote}</p>
+      <p><a href={repo}>{repo.replace('https://', '')}</a></p>
+    </footer>
+  </body>
+</html>
