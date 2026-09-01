@@ -69,12 +69,21 @@ Completion scripts are generated from the parser, so they cannot drift away from
 the commands:
 
 ```sh
-# zsh
-LocalSM completion zsh > "${fpath[1]}/_LocalSM"
+# zsh, into a directory you control
+mkdir -p ~/.zsh/completions
+LocalSM completion zsh > ~/.zsh/completions/_LocalSM
+# then, in ~/.zshrc and before compinit:
+#   fpath=(~/.zsh/completions $fpath)
 
 # bash, in ~/.bashrc
 source <(LocalSM completion bash)
 ```
+
+Do not write to `${fpath[1]}`: it is merely the first directory on fpath, which
+under oh-my-zsh is `~/.oh-my-zsh/plugins/git`, where the script will be wiped by
+a plugin update. If zsh came from Homebrew,
+`/opt/homebrew/share/zsh/site-functions` is another good spot — it is usually on
+fpath already, so `.zshrc` needs no change.
 
 Completion calls `LocalSM completion services` for real service names, so adding
 a service does not mean regenerating the script.

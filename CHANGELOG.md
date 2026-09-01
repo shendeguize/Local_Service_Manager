@@ -5,6 +5,18 @@ All notable changes to LocalSM are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- `doctor` prints one heading per section. The per-service checks landed between
+  the local tool checks, so `[本地工具]` appeared twice with an unrelated section
+  in between. The report now groups by section, which also keeps a future
+  insertion from splitting one.
+- The installation guide no longer suggests writing the zsh completion to
+  `${fpath[1]}`, which under oh-my-zsh is a plugin directory that a plugin
+  update overwrites.
+
 ## [0.3.1] - 2026-09-01
 
 ### Added

@@ -69,9 +69,9 @@ def local_checks() -> list[Check]:
         _check_command("本地工具", "ssh", "ssh"),
         _check_command("本地工具", "osascript", "osascript"),
     ]
-    checks.extend(configured_service_checks())
     ghostty = Path("/Applications/Ghostty.app")
     checks.append(Check("本地工具", "Ghostty", "PASS" if ghostty.exists() else "WARN", str(ghostty)))
+    checks.extend(configured_service_checks())
     checks.append(
         Check(
             "Python 依赖",
@@ -145,12 +145,16 @@ def run_doctor(local_only: bool = False, timeout: int = 8) -> list[Check]:
 
 
 def print_report(checks: list[Check]) -> int:
-    current_section = None
+    # Grouped rather than printed in arrival order: a check that lands between
+    # two others of the same section would otherwise print that header twice,
+    # which is what the service checks did to the local tools around them.
+    sections: dict[str, list[Check]] = {}
     for check in checks:
-        if check.section != current_section:
-            current_section = check.section
-            print(f"\n[{current_section}]")
-        print(f"{check.status:4} {check.name}: {check.detail}")
+        sections.setdefault(check.section, []).append(check)
+    for section, group in sections.items():
+        print(f"\n[{section}]")
+        for check in group:
+            print(f"{check.status:4} {check.name}: {check.detail}")
     failed = sum(check.status == "FAIL" for check in checks)
     print(f"\n结果：{len(checks) - failed} 项通过/提示，{failed} 项失败")
     return 1 if failed else 0

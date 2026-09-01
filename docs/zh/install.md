@@ -61,12 +61,20 @@ uv run python -m localsm.cli status
 补全脚本由 parser 实时生成，不会与命令脱节：
 
 ```sh
-# zsh
-LocalSM completion zsh > "${fpath[1]}/_LocalSM"
+# zsh：放进一个你自己控制的目录
+mkdir -p ~/.zsh/completions
+LocalSM completion zsh > ~/.zsh/completions/_LocalSM
+# 然后在 ~/.zshrc 里、compinit 之前加上：
+#   fpath=(~/.zsh/completions $fpath)
 
 # bash（写进 ~/.bashrc）
 source <(LocalSM completion bash)
 ```
+
+别写到 `${fpath[1]}`：那只是 fpath 的第一个目录，在 oh-my-zsh 下是
+`~/.oh-my-zsh/plugins/git`，脚本会随插件更新被冲掉。用 Homebrew 装了
+zsh 的话，`/opt/homebrew/share/zsh/site-functions` 也是个合适的位置——
+它通常已经在 fpath 里，不用改 `.zshrc`。
 
 补全会调用 `LocalSM completion services` 取真实服务名，所以新增服务后无需重新
 生成脚本。
