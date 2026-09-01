@@ -7,12 +7,6 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [0.3.4] - 2026-09-01
 
-### Added
-
-- Describe the user-visible changes in this release.
-
-## [Unreleased]
-
 ### Fixed
 
 - A version bump no longer leaves the installed package metadata behind, which
