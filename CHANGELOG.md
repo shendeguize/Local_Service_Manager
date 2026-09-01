@@ -5,6 +5,12 @@ All notable changes to LocalSM are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.3.2] - 2026-09-01
+
+### Added
+
+- Describe the user-visible changes in this release.
+
 ## [Unreleased]
 
 ### Fixed
