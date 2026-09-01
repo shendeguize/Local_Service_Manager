@@ -7,6 +7,10 @@ LocalSM 是一个面向 macOS 的本地服务与 SSH 资源控制台。你把每
 LocalSM 没有常驻 supervisor：服务以 detached 进程运行，用 pidfile、端口
 探测和日志记录状态。这样即使 LocalSM 退出，已启动的服务也不会被自动杀掉。
 
+完整文档见 [docs/zh/index.md](docs/zh/index.md)（English:
+[docs/en/index.md](docs/en/index.md)）：安装、快速上手、配置、服务、launchd、
+隧道、远端扫描、Web 面板、CLI 参考与故障排查。
+
 ## 安装
 
 ### 推荐：npm 直接安装
@@ -77,7 +81,7 @@ LocalSM down demo
 ```
 
 所有命令都支持 `--json`，脚本请一律使用它；输出形态与退出码见
-[docs/cli-contract.md](docs/cli-contract.md)。
+[docs/zh/cli-contract.md](docs/zh/cli-contract.md)。
 
 ```sh
 LocalSM --json status | jq -r '.[] | select(.state == "running") | .name'
@@ -88,36 +92,29 @@ Web 页面提供服务启停、重启、改端口、日志抽屉、远端扫描�
 
 ## CLI 参考
 
-```text
-LocalSM --version
-LocalSM [--json] [--quiet] ...
-LocalSM init
-LocalSM up [SERVICE] [--port PORT] [--auto-port]
-LocalSM down [SERVICE]
-LocalSM restart [SERVICE] [--port PORT] [--auto-port]
-LocalSM status [SERVICE]
-LocalSM set-port SERVICE PORT
-LocalSM exec SERVICE COMMAND...
-LocalSM logs SERVICE [--lines N]
-LocalSM config
-LocalSM doctor [--local-only] [--timeout SECONDS]
-LocalSM remote scan [HOST...] [--timeout SECONDS]
-LocalSM tunnel add NAME HOST LOCAL_PORT REMOTE_PORT [--remote-host HOST]
-LocalSM tunnel rm NAME
-LocalSM tunnel list
-LocalSM tunnel ensure [NAME]
-LocalSM ssh HOST [--app ghostty|terminal]
+全部命令与参数见 [docs/zh/cli-reference.md](docs/zh/cli-reference.md)，它由
+`argparse` parser 自动生成，不会与实际行为脱节。常用的几条：
+
+```sh
+LocalSM init                   # 生成初始配置
+LocalSM up [SERVICE]           # 省略服务名则作用于全部服务
+LocalSM status
+LocalSM logs demo --lines 120
+LocalSM set-port demo 18080
+LocalSM exec demo pwd          # 在服务的工作目录里跑命令
+LocalSM enable demo            # 交给 launchd 开机自启
+LocalSM edit                   # 用 $EDITOR 改配置并查看变更
 LocalSM web
 ```
 
-不指定 `SERVICE` 时，`up`、`down`、`restart`、`status` 会作用于全部服务。
-`exec` 使用参数列表直接执行命令，不会替换受管服务进程：
+补全脚本也从同一个 parser 生成：
 
 ```sh
-LocalSM exec demo pwd
-LocalSM logs demo --lines 120
-LocalSM set-port demo 18080
+LocalSM completion zsh > "${fpath[1]}/_LocalSM"
+source <(LocalSM completion bash)
 ```
+
+补全会调用 `LocalSM completion services` 取真实服务名，新增服务后无需重新生成。
 
 `doctor` 默认会扫描 SSH config 中的 Host；网络受限时可用
 `LocalSM doctor --local-only` 只检查本机。
@@ -160,9 +157,9 @@ services:
 ```
 
 完整字段、环境变量和 state 布局见
-[docs/configuration.md](docs/configuration.md)，输出契约见
-[docs/cli-contract.md](docs/cli-contract.md)，系统设计见
-[docs/architecture.md](docs/architecture.md)。
+[docs/zh/configuration.md](docs/zh/configuration.md)，输出契约见
+[docs/zh/cli-contract.md](docs/zh/cli-contract.md)，系统设计见
+[docs/zh/architecture.md](docs/zh/architecture.md)。
 
 ## 自检、测试与 smoke
 
@@ -178,12 +175,12 @@ make smoke         # 全量真实服务验收，可能改变服务状态
 全量真实验收；它会尽力恢复 dshc 的原端口和 launchd 状态。执行前请确认
 当前服务状态允许被重启。
 
-README.md 与 README.en.md 的上述一级章节需要保持同步；新增用户可见功能
-时请同时更新两份文档。CI 会检查章节结构和本地链接。
+README.md 与 README.en.md 的上述一级章节需要保持同步，`docs/zh/` 下每个页面也
+必须在 `docs/en/` 有标题结构一致的对应页。新增用户可见功能时请同时更新两侧；
+CI 会检查章节结构、双语文档树和本地链接。
 
 ## 路线图
 
 - npm 直接安装：已提供 `@shendeguize/local-sm`，内置 LocalSM wheel，并会自动安装 `uv`。
-- launchd 原生服务模板：当前只管理 detached 进程，后续可按服务选择系统托管。
-- shell 补全与更完整的 `--help`：当前依赖 README 与 `docs/cli-contract.md`。
+- 官网与仿真面板：让人在安装之前就能看到 LocalSM 长什么样。
 - 远端扫描结果 diff 与通知：当前提供按需扫描和缓存。

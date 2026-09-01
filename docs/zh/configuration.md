@@ -9,7 +9,7 @@ LocalSM 把配置和运行状态放在用户目录下，与仓库位置无关：
 ```
 
 `LocalSM init` 会在配置目录生成带注释的初始文件，且**永远不覆盖已存在的
-文件**。仓库里的 [`config/services.example.yaml`](../config/services.example.yaml)
+文件**。仓库里的 [`config/services.example.yaml`](../../config/services.example.yaml)
 是同一份模板的只读副本，方便在网页上直接阅读。
 
 配置文件不存在时，读类命令仍会正常返回，并在 stderr 提示运行

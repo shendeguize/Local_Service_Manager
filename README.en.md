@@ -8,6 +8,11 @@ LocalSM has no resident supervisor. Services run detached and are tracked with
 pidfiles, port probes, and logs, so a LocalSM exit does not automatically stop
 the services it started.
 
+The full documentation is in [docs/en/index.md](docs/en/index.md) (中文:
+[docs/zh/index.md](docs/zh/index.md)): installation, quickstart, configuration,
+services, launchd, tunnels, remote scans, the web dashboard, the CLI reference,
+and troubleshooting.
+
 ## Installation
 
 ### Recommended: direct installation with npm
@@ -77,7 +82,7 @@ LocalSM down demo
 ```
 
 Every command accepts `--json`. Scripts should always use it; see
-[docs/cli-contract.md](docs/cli-contract.md) for the shapes and exit codes.
+[docs/en/cli-contract.md](docs/en/cli-contract.md) for the shapes and exit codes.
 
 ```sh
 LocalSM --json status | jq -r '.[] | select(.state == "running") | .name'
@@ -89,37 +94,31 @@ shown as actionable error notifications.
 
 ## CLI reference
 
-```text
-LocalSM --version
-LocalSM [--json] [--quiet] ...
-LocalSM init
-LocalSM up [SERVICE] [--port PORT] [--auto-port]
-LocalSM down [SERVICE]
-LocalSM restart [SERVICE] [--port PORT] [--auto-port]
-LocalSM status [SERVICE]
-LocalSM set-port SERVICE PORT
-LocalSM exec SERVICE COMMAND...
-LocalSM logs SERVICE [--lines N]
-LocalSM config
-LocalSM doctor [--local-only] [--timeout SECONDS]
-LocalSM remote scan [HOST...] [--timeout SECONDS]
-LocalSM tunnel add NAME HOST LOCAL_PORT REMOTE_PORT [--remote-host HOST]
-LocalSM tunnel rm NAME
-LocalSM tunnel list
-LocalSM tunnel ensure [NAME]
-LocalSM ssh HOST [--app ghostty|terminal]
+Every command and argument is listed in
+[docs/en/cli-reference.md](docs/en/cli-reference.md), generated from the
+`argparse` parser so it cannot drift from the real behaviour. The common ones:
+
+```sh
+LocalSM init                   # write the starter configuration
+LocalSM up [SERVICE]           # every service when the name is omitted
+LocalSM status
+LocalSM logs demo --lines 120
+LocalSM set-port demo 18080
+LocalSM exec demo pwd          # run a command in the service's directory
+LocalSM enable demo            # hand to launchd for start at login
+LocalSM edit                   # change the config in $EDITOR and see the diff
 LocalSM web
 ```
 
-When `SERVICE` is omitted, `up`, `down`, `restart`, and `status` operate on all
-configured services. `exec` runs its argument list without replacing the
-managed process:
+Completion scripts come from the same parser:
 
 ```sh
-LocalSM exec demo pwd
-LocalSM logs demo --lines 120
-LocalSM set-port demo 18080
+LocalSM completion zsh > "${fpath[1]}/_LocalSM"
+source <(LocalSM completion bash)
 ```
+
+Completion calls `LocalSM completion services` for real service names, so adding
+a service does not mean regenerating the script.
 
 `doctor` scans SSH-configured hosts by default. Use
 `LocalSM doctor --local-only` in a restricted network environment.
@@ -148,10 +147,11 @@ creates the starter files, and
 [`config/services.example.yaml`](config/services.example.yaml) is a read-only
 copy of the same template.
 
-See [docs/configuration.md](docs/configuration.md) for all fields, environment
-variables, and state layout. See [docs/cli-contract.md](docs/cli-contract.md)
-for the output contract, and [docs/architecture.md](docs/architecture.md) for
-the module and process model.
+See [docs/en/configuration.md](docs/en/configuration.md) for all fields,
+environment variables, and state layout. See
+[docs/en/cli-contract.md](docs/en/cli-contract.md) for the output contract, and
+[docs/en/architecture.md](docs/en/architecture.md) for the module and process
+model.
 
 ## Diagnostics, tests, and smoke
 
@@ -168,16 +168,15 @@ Hermetic tests do not connect to real SSH hosts or start real service CLIs.
 services. It records and attempts to restore dshc's original port and launchd
 state.
 
-The paired top-level sections in README.md and README.en.md must stay in sync.
-Update both files for user-visible features; CI checks their section structure
-and local links.
+The paired top-level sections in README.md and README.en.md must stay in sync,
+and every page under `docs/zh/` needs a counterpart under `docs/en/` with the
+same heading structure. Update both for user-visible features; CI checks the
+section structure, the bilingual docs tree, and local links.
 
 ## Roadmap
 
 - Direct npm installation: `@shendeguize/local-sm` includes the LocalSM wheel
   and automatically installs `uv` when needed.
-- Native launchd templates: detached processes are supported today; per-service
-  system management can be added later.
-- Shell completion and richer `--help`: today the README and
-  `docs/cli-contract.md` carry that detail.
+- A project website with a simulated dashboard, so LocalSM can be evaluated
+  before installing it.
 - Remote listener diffs and notifications: currently scans and caches on demand.

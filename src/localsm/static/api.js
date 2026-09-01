@@ -22,6 +22,7 @@ async function request(path, options = {}) {
 const json = (method, body) => ({ method, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
 
 export const api = {
+  config: () => request("/api/config"),
   services: () => request("/api/services"),
   serviceAction: (name, action, body = {}) => request(`/api/services/${encodeURIComponent(name)}/${action}`, json("POST", body)),
   logs: (name, lines = 80) => request(`/api/logs/${encodeURIComponent(name)}?lines=${encodeURIComponent(lines)}`),

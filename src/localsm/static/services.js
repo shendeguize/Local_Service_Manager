@@ -10,16 +10,20 @@ export function createServicesPanel({ root, onChanged }) {
     root.innerHTML = rows.length ? rows.map((service) => {
       const running = service.state === "running";
       const status = running ? "running" : service.error ? "error" : "stopped";
+      const launchd = service.managed_by === "launchd";
       const primaryAction = running ? "down" : "up";
       const primaryLabel = running ? "停止" : "启动";
+      // launchd owns an enabled service's lifecycle, so stopping it from here
+      // would only trigger an immediate KeepAlive restart.
+      const badge = launchd ? '<span class="managed-badge" title="由 launchd 托管；用 LocalSM disable 交回">launchd</span>' : "";
       return `<tr>
-        <td><div class="service-name"><span class="service-icon">${escapeHtml(serviceGlyph(service.name))}</span><span>${escapeHtml(service.name)}</span></div></td>
+        <td><div class="service-name"><span class="service-icon">${escapeHtml(serviceGlyph(service.name))}</span><span>${escapeHtml(service.name)}</span>${badge}</div></td>
         <td><span class="status ${status}">${escapeHtml(service.state)}</span></td>
         <td class="mono">${service.pid || '<span class="muted">—</span>'}</td>
         <td class="mono">${service.port || '<span class="muted">—</span>'}</td>
         <td>${service.url ? `<div class="url-cell"><a href="${escapeHtml(service.url)}" target="_blank" rel="noreferrer">${escapeHtml(service.url)}</a><button class="copy-button" data-copy="${escapeHtml(service.url)}" title="复制 URL">${icon("copy")}</button></div>` : '<span class="muted">—</span>'}</td>
         <td><div class="actions">
-          <button class="button small ${running ? "danger" : "primary"}" data-service-action="${primaryAction}" data-service="${escapeHtml(service.name)}">${icon(running ? "stop" : "play")}${primaryLabel}</button>
+          <button class="button small ${running ? "danger" : "primary"}" data-service-action="${primaryAction}" data-service="${escapeHtml(service.name)}"${launchd && running ? ' disabled title="由 launchd 托管，请用 LocalSM disable"' : ""}>${icon(running ? "stop" : "play")}${primaryLabel}</button>
           <button class="button small" data-service-action="restart" data-service="${escapeHtml(service.name)}" title="重启">${icon("restart")}<span class="sr-only">重启</span></button>
           <button class="button small" data-port="${escapeHtml(service.name)}" title="端口设置">端口</button>
           <button class="button small" data-logs="${escapeHtml(service.name)}" title="查看日志">日志</button>
