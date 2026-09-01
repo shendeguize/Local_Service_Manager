@@ -9,12 +9,6 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- Describe the user-visible changes in this release.
-
-## [Unreleased]
-
-### Added
-
 - A website at <https://shendeguize.github.io/Local_Service_Manager/>, built
   from the same sources as the product: the documentation is copied out of
   `docs/`, and the simulated dashboard it hosts is the real dashboard with only
