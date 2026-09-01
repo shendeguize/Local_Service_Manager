@@ -33,7 +33,7 @@
       {
         "name": "worker",
         "preferred_port": 8090,
-        "start": "uv run celery -A app.worker worker --port {port}",
+        "start": "uv run python -m app.worker --health-port {port}",
         "url_from_log": true,
         "working_dir": null
       }

@@ -86,25 +86,24 @@ def get(client, path: str) -> object:
     return response.get_json()
 
 
-def post(client, path: str) -> object:
-    response = client.post(path, json={})
+def post(client, path: str, body: dict | None = None) -> object:
+    response = client.post(path, json=body or {})
     if response.status_code >= 400:
         raise FixtureError(f"POST {path} returned {response.status_code}: {response.get_data(as_text=True)}")
     return response.get_json()
 
 
 def capture_remote(scenario: dict, client) -> list[dict]:
-    """Author the scan values, but take the field names from a real scan."""
-    probe = post(client, "/api/remote/scan")
-    if not isinstance(probe, list):
-        raise FixtureError("the scan endpoint did not return a list")
-    # With no hosts in the sandbox's ssh config the scan is empty, so fall back to
-    # the scanner directly for one unknown host, which still exercises the real
-    # record construction.
-    if not probe:
-        from localsm.remote import scan_hosts
+    """Author the scan values, but take the field names from a real scan.
 
-        probe = scan_hosts(["localsm-demo-nonexistent-host"], timeout=1)
+    The scan is asked for one host that does not exist, rather than for whatever
+    is in the operator's ssh config: a build should not open connections to
+    someone's real machines, and an unreachable host builds the same record
+    shape as a reachable one.
+    """
+    probe = post(client, "/api/remote/scan", {"hosts": ["localsm-demo-nonexistent-host"], "timeout": 1})
+    if not isinstance(probe, list) or not probe:
+        raise FixtureError(f"the scan endpoint returned no record to compare against: {probe!r}")
     expected = set(probe[0])
     results = []
     for host in scenario["remote"]:
