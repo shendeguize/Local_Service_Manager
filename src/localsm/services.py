@@ -11,7 +11,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from .config import STATE_DIR, ServiceConfig, ensure_directories, load_services
+from .config import ServiceConfig, ensure_directories, load_services, state_dir
 from .logs import log_path, parse_actual_port, parse_actual_url, read_log
 from .ports import PortError, allocate_port
 
@@ -50,7 +50,7 @@ class ServiceManager:
             raise ServiceError(f"unknown service {name!r}; available: {available}") from exc
 
     def _pid_path(self, name: str) -> Path:
-        return STATE_DIR / "pids" / f"{name}.pid"
+        return state_dir() / "pids" / f"{name}.pid"
 
     def _read_pid(self, name: str) -> int | None:
         try:
@@ -100,7 +100,7 @@ class ServiceManager:
     def status(self, name: str) -> ServiceStatus:
         config = self._config(name)
         pid = self._read_pid(name)
-        text = read_log(STATE_DIR, name)
+        text = read_log(state_dir(), name)
         port = parse_actual_port(text)
         url = parse_actual_url(text) if config.url_from_log else None
         if self._pid_alive(pid):
@@ -159,7 +159,7 @@ class ServiceManager:
         except PortError as exc:
             raise ServiceError(str(exc)) from exc
         command = self._render(config.start, port)
-        path = log_path(STATE_DIR, name)
+        path = log_path(state_dir(), name)
         path.parent.mkdir(parents=True, exist_ok=True)
         log_handle = path.open("a", encoding="utf-8")
         env = os.environ.copy()
@@ -244,7 +244,7 @@ class ServiceManager:
 
     def logs(self, name: str, lines: int = 40) -> str:
         self._config(name)
-        return read_log(STATE_DIR, name, lines)
+        return read_log(state_dir(), name, lines)
 
     def _run_command(self, command: str, config: ServiceConfig) -> None:
         result = subprocess.run(

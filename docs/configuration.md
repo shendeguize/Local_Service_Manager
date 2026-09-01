@@ -1,26 +1,43 @@
 # 配置参考
 
-LocalSM 默认从项目目录读取配置：
+LocalSM 把配置和运行状态放在用户目录下，与仓库位置无关：
 
 ```text
-config/services.yaml   服务定义与端口池
-config/tunnels.yaml    SSH 隧道规则
-state/                 pidfile、日志、端口状态、扫描缓存
+~/.config/localsm/services.yaml      服务定义与端口池
+~/.config/localsm/tunnels.yaml       SSH 隧道规则
+~/.local/state/localsm/              pidfile、日志、端口状态、扫描缓存
 ```
+
+`LocalSM init` 会在配置目录生成带注释的初始文件，且**永远不覆盖已存在的
+文件**。仓库里的 [`config/services.example.yaml`](../config/services.example.yaml)
+是同一份模板的只读副本，方便在网页上直接阅读。
+
+配置文件不存在时，读类命令仍会正常返回，并在 stderr 提示运行
+`LocalSM init`；`LocalSM doctor` 则把它报为 `FAIL`。
 
 ## 路径环境变量
 
 | 变量 | 作用 |
 | --- | --- |
-| `LOCALSM_ROOT` | 覆盖项目根目录 |
-| `LOCALSM_CONFIG_DIR` | 覆盖配置目录 |
-| `LOCALSM_STATE_DIR` | 覆盖运行状态目录 |
+| `LOCALSM_CONFIG_DIR` | 直接覆盖配置目录 |
+| `LOCALSM_STATE_DIR` | 直接覆盖运行状态目录 |
+| `LOCALSM_ROOT` | 同时提供两者：`<root>/config` 与 `<root>/state` |
+| `XDG_CONFIG_HOME` / `XDG_STATE_HOME` | 遵循 XDG 约定，改变默认基准目录 |
 | `PYTHON` | 命令模板 `{python}` 使用的 Python 可执行文件 |
+
+优先级为 `LOCALSM_CONFIG_DIR` / `LOCALSM_STATE_DIR` > `LOCALSM_ROOT` >
+XDG 变量 > 家目录默认值。
 
 例如，为测试使用一套隔离状态：
 
 ```sh
-LOCALSM_STATE_DIR=/tmp/localsm-state ./LocalSM status
+LOCALSM_STATE_DIR=/tmp/localsm-state LocalSM status
+```
+
+从源码开发时，可以用 `LOCALSM_ROOT` 把配置和状态都留在仓库内：
+
+```sh
+LOCALSM_ROOT="$PWD" ./LocalSM status
 ```
 
 ## services.yaml
@@ -87,13 +104,13 @@ tunnels:
 ```
 
 `host` 必须是 `~/.ssh/config` 中的 Host alias。LocalSM 通过 detached
-`ssh -N -L` 进程建立隧道，并把 pid 写入 `state/pids/tunnel-*.pid`。
+`ssh -N -L` 进程建立隧道，并把 pid 写入状态目录的 `pids/tunnel-*.pid`。
 `tunnel ensure` 会检测进程，不存在时按原规则重建。
 
 ## state 布局
 
 ```text
-state/
+~/.local/state/localsm/
 ├── logs/<service>.log
 ├── logs/tunnel-<name>.log
 ├── pids/<service>.pid
@@ -102,5 +119,10 @@ state/
 └── remote_scan.json
 ```
 
-state 是运行时数据，已被 `.gitignore` 排除。删除 `ports.json` 会清除粘性
-端口记录，但不会停止现有进程。
+state 是运行时数据，不属于仓库。删除 `ports.json` 会清除粘性端口记录，
+但不会停止现有进程。
+
+## 机器可读输出
+
+所有命令都支持 `--json`，输出形态与退出码约定见
+[cli-contract.md](cli-contract.md)。

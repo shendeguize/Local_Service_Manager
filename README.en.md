@@ -1,9 +1,8 @@
 # LocalSM
 
-LocalSM is a macOS-oriented console for local services and SSH resources. It
-normalizes services such as `enva`, `dshc`, `aqp`, `kimi`, and `dsh` into
-configurable command templates, while also managing ports, logs, remote
-listener scans, and SSH tunnels.
+LocalSM is a macOS-oriented console for local services and SSH resources. You
+describe each local service as a configurable command template, and LocalSM
+manages their ports, logs, remote listener scans, and SSH tunnels.
 
 LocalSM has no resident supervisor. Services run detached and are tracked with
 pidfiles, port probes, and logs, so a LocalSM exit does not automatically stop
@@ -16,8 +15,12 @@ the services it started.
 You need Node.js 18+:
 
 ```sh
-npx @shendeguize/local-sm --version
+npx @shendeguize/local-sm init
+npx @shendeguize/local-sm status
 ```
+
+`init` writes a commented starter configuration to `~/.config/localsm/`. It
+never overwrites an existing file, so running it again is safe.
 
 The npm package includes the matching LocalSM wheel, so it does not require
 LocalSM to be published on PyPI. On first run the launcher installs `uv` with
@@ -36,8 +39,10 @@ uv tool install --editable . --force
 LocalSM --version
 ```
 
-Editable installation keeps the global command pointed at the repository's
-`config/` and `state/` directories. See
+However it is installed, LocalSM reads configuration from
+`~/.config/localsm/` and writes runtime state to `~/.local/state/localsm/`,
+independently of where the repository lives. Set `LOCALSM_ROOT="$PWD"` to keep
+both inside the checkout while developing. See
 [`packages/npm/README.md`](packages/npm/README.md) for details.
 See [`docs/releasing.md`](docs/releasing.md) for the release process.
 
@@ -55,16 +60,27 @@ dependencies are Flask and PyYAML; test dependencies are installed with
 ## Quick start
 
 ```sh
+# Create the starter configuration, then edit it
+LocalSM init
+$EDITOR ~/.config/localsm/services.yaml
+
 LocalSM config
 LocalSM status
 
 LocalSM web
 # Open http://127.0.0.1:8765/
 
-LocalSM up enva --auto-port
-LocalSM restart enva
-LocalSM logs enva
-LocalSM down enva
+LocalSM up demo --auto-port
+LocalSM restart demo
+LocalSM logs demo
+LocalSM down demo
+```
+
+Every command accepts `--json`. Scripts should always use it; see
+[docs/cli-contract.md](docs/cli-contract.md) for the shapes and exit codes.
+
+```sh
+LocalSM --json status | jq -r '.[] | select(.state == "running") | .name'
 ```
 
 The Web console provides service lifecycle controls, port changes, a log
@@ -75,6 +91,8 @@ shown as actionable error notifications.
 
 ```text
 LocalSM --version
+LocalSM [--json] [--quiet] ...
+LocalSM init
 LocalSM up [SERVICE] [--port PORT] [--auto-port]
 LocalSM down [SERVICE]
 LocalSM restart [SERVICE] [--port PORT] [--auto-port]
@@ -98,9 +116,9 @@ configured services. `exec` runs its argument list without replacing the
 managed process:
 
 ```sh
-LocalSM exec enva pwd
-LocalSM logs kimi --lines 120
-LocalSM set-port aqp 18080
+LocalSM exec demo pwd
+LocalSM logs demo --lines 120
+LocalSM set-port demo 18080
 ```
 
 `doctor` scans SSH-configured hosts by default. Use
@@ -120,13 +138,20 @@ LocalSM ssh my-pod --app ghostty
 Scans run concurrently and probe remote listeners using `ss`, `lsof`,
 `netstat`, and `/proc` fallbacks. LocalSM only reads `~/.ssh/config`; it never
 writes `LocalForward` entries. Tunnel definitions are stored in
-`config/tunnels.yaml`.
+`~/.config/localsm/tunnels.yaml`.
 
 ## Configuration
 
+Configuration lives in `~/.config/localsm/services.yaml` and runtime state in
+`~/.local/state/localsm/`, independently of the repository. `LocalSM init`
+creates the starter files, and
+[`config/services.example.yaml`](config/services.example.yaml) is a read-only
+copy of the same template.
+
 See [docs/configuration.md](docs/configuration.md) for all fields, environment
-variables, and state layout. See [docs/architecture.md](docs/architecture.md)
-for the module and process model.
+variables, and state layout. See [docs/cli-contract.md](docs/cli-contract.md)
+for the output contract, and [docs/architecture.md](docs/architecture.md) for
+the module and process model.
 
 ## Diagnostics, tests, and smoke
 
@@ -153,4 +178,6 @@ and local links.
   and automatically installs `uv` when needed.
 - Native launchd templates: detached processes are supported today; per-service
   system management can be added later.
+- Shell completion and richer `--help`: today the README and
+  `docs/cli-contract.md` carry that detail.
 - Remote listener diffs and notifications: currently scans and caches on demand.

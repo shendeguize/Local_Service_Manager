@@ -7,8 +7,14 @@ project to be published on PyPI.
 Install Node.js 18+ first, then run:
 
 ```sh
-npx @shendeguize/local-sm --version
+npx @shendeguize/local-sm init
+npx @shendeguize/local-sm status
 ```
+
+`init` writes a commented starter configuration to `~/.config/localsm/` and
+never overwrites an existing file. Runtime state goes to
+`~/.local/state/localsm/`. Until the configuration exists, commands report
+where it should live rather than silently doing nothing.
 
 The launcher installs `uv` with Astral's official installer on first run when
 it is not already available, so no separate setup step is needed. The package

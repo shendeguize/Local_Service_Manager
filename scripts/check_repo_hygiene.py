@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject runtime state and generated files from the tracked repository."""
+"""Reject runtime state, generated files, and personal config from the repository."""
 
 from __future__ import annotations
 
@@ -27,6 +27,9 @@ def forbidden(path: str) -> bool:
         return False
     if path.startswith("state/"):
         return True
+    # Real config belongs in ~/.config/localsm; only the example is tracked.
+    if path.startswith("config/") and path.endswith(".yaml") and not path.endswith(".example.yaml"):
+        return True
     if path in FORBIDDEN_FILES or path.endswith((".pyc", ".pyo")):
         return True
     return path.startswith(FORBIDDEN_PREFIXES)
@@ -35,7 +38,7 @@ def forbidden(path: str) -> bool:
 def main() -> int:
     violations = [path for path in tracked_files() if forbidden(path)]
     if violations:
-        print("Generated or runtime files are tracked:", file=sys.stderr)
+        print("Runtime state, generated files, or personal config are tracked:", file=sys.stderr)
         print("\n".join(f"  {path}" for path in violations), file=sys.stderr)
         return 1
     print("Repository hygiene check passed.")

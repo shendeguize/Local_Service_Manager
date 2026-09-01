@@ -8,7 +8,7 @@ from typing import Any
 
 from flask import Flask, jsonify, render_template, request
 
-from .config import STATE_DIR
+from .config import state_dir
 from .remote import scan_hosts
 from .services import ServiceError, ServiceManager
 from .terminal import TerminalError, launch_ssh
@@ -53,7 +53,7 @@ def create_app() -> Flask:
 
     @app.get("/api/remote")
     def remote() -> Any:
-        path = STATE_DIR / "remote_scan.json"
+        path = state_dir() / "remote_scan.json"
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
             scanned_at = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC).isoformat()

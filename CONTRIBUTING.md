@@ -9,6 +9,16 @@ uv sync --dev
 make check
 ```
 
+LocalSM reads configuration from `~/.config/localsm/` and writes state to
+`~/.local/state/localsm/`, wherever the repository sits. To keep both inside
+your checkout while developing, export `LOCALSM_ROOT="$PWD"`. Never commit a
+real `config/*.yaml`; only `config/services.example.yaml` is tracked, and
+`make hygiene` fails the build if a personal config sneaks in.
+
+The test suite isolates these paths automatically through the autouse
+`localsm_home` fixture in [tests/conftest.py](tests/conftest.py), so tests can
+never read or damage your own configuration.
+
 `make check` is the pull-request gate. It runs Ruff's lint and format checks,
 then the pytest suite with the 75% coverage floor. `make build` builds the
 Python distribution, and `make release-preflight` runs both checks and the

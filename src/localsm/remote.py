@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from .config import STATE_DIR, TUNNELS_FILE, ensure_directories, load_tunnels
+from .config import ensure_directories, load_tunnels, state_dir
 
 REMOTE_PORT_COMMAND = (
     "if command -v ss >/dev/null 2>&1; then "
@@ -128,7 +128,7 @@ def _scan_one(host: SSHHost, timeout: int = 8) -> RemoteScan:
 def tunnel_coverage(host: str, port: int) -> list[str]:
     return [
         str(item.get("name"))
-        for item in load_tunnels(TUNNELS_FILE)
+        for item in load_tunnels()
         if item.get("host") == host and int(item.get("remote_port", -1)) == port
     ]
 
@@ -149,5 +149,5 @@ def scan_hosts(hosts: list[str] | None = None, timeout: int = 8) -> list[dict[st
         item["tunnels"] = {str(port): tunnel_coverage(result.host, port) for port in result.ports}
         output.append(item)
     ensure_directories()
-    (STATE_DIR / "remote_scan.json").write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
+    (state_dir() / "remote_scan.json").write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
     return output
