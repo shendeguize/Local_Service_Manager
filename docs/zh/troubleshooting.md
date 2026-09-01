@@ -11,6 +11,10 @@ LocalSM doctor                  # 加上远端 SSH 连通性，慢一些
 `start` 命令的可执行文件、配置文件有效性、state 目录可写性。任何 `FAIL` 都会让退出码
 变成 1，所以可以直接挂进脚本。
 
+远端那一节只检查你在 `tunnels.yaml` 里用到的 Host，不是 `~/.ssh/config` 里的全部主机：
+一台和 LocalSM 无关的机器宕了不该算 LocalSM 有问题，诊断命令也不该去连你没让它连的
+主机。没有配置隧道时这一节直接跳过。
+
 `WARN` 不影响退出码：缺 Ghostty 只是没法用 `LocalSM ssh --app ghostty`，某个服务的命令
 不在 PATH 上也许是因为它需要先激活环境。
 

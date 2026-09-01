@@ -12,6 +12,11 @@ Python dependencies, the executable behind each service's `start` command,
 configuration validity, and whether the state directory is writable. Any `FAIL`
 makes the exit code 1, so it drops straight into a script.
 
+The remote section checks only the hosts your `tunnels.yaml` uses, not every
+host in `~/.ssh/config`: an unrelated machine being down is not a LocalSM fault,
+and a diagnostic should not connect to hosts you never pointed it at. With no
+tunnels configured the section is skipped.
+
 A `WARN` does not affect the exit code: a missing Ghostty only means
 `LocalSM ssh --app ghostty` will not work, and a service command that is not on
 PATH may just need an environment activated first.

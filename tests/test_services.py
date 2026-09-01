@@ -45,6 +45,62 @@ def test_external_status_command_is_reported(manager, monkeypatch):
     assert result.port == 7788
 
 
+def test_a_silent_running_service_still_reports_its_allocated_port(manager, monkeypatch):
+    """A service that logs nothing is common: python buffers stdout when piped."""
+    ports.save_port("demo", 18153)
+    monkeypatch.setattr(manager, "_read_pid", lambda name: 4321)
+    monkeypatch.setattr(manager, "_pid_alive", lambda pid: True)
+    result = manager.status("demo")
+    assert result.state == "running"
+    assert result.port == 18153
+
+
+def test_a_logged_port_wins_over_the_allocated_one(manager, monkeypatch):
+    """The service may bind somewhere other than where it was told to."""
+    ports.save_port("demo", 18153)
+    monkeypatch.setattr(manager, "_read_pid", lambda name: 4321)
+    monkeypatch.setattr(manager, "_pid_alive", lambda pid: True)
+    monkeypatch.setattr(services, "read_log", lambda directory, name: "Listening on 127.0.0.1:18159\n")
+    assert manager.status("demo").port == 18159
+
+
+def test_a_stopped_service_reports_no_port(manager):
+    ports.save_port("demo", 18153)
+    result = manager.status("demo")
+    assert result.state == "stopped"
+    assert result.port is None
+
+
+def running_on(manager, monkeypatch, port, managed_by="detached"):
+    monkeypatch.setattr(
+        manager,
+        "status",
+        lambda name: services.ServiceStatus(name, "running", 4321, port, None, "", managed_by=managed_by),
+    )
+
+
+def test_up_on_a_running_service_refuses_to_drop_a_requested_port(manager, monkeypatch):
+    running_on(manager, monkeypatch, 18150)
+    with pytest.raises(ServiceError, match="already running on port 18150"):
+        manager.up("demo", requested_port=18155)
+
+
+def test_up_accepts_the_port_a_running_service_already_has(manager, monkeypatch):
+    running_on(manager, monkeypatch, 18150)
+    assert manager.up("demo", requested_port=18150).port == 18150
+
+
+def test_up_treats_auto_port_as_satisfied_by_a_running_service(manager, monkeypatch):
+    running_on(manager, monkeypatch, 18150)
+    assert manager.up("demo", auto_port=True).state == "running"
+
+
+def test_up_on_a_launchd_service_explains_the_frozen_port(manager, monkeypatch):
+    running_on(manager, monkeypatch, 18150, managed_by="launchd")
+    with pytest.raises(ServiceError, match="frozen in the agent"):
+        manager.up("demo", requested_port=18155)
+
+
 def test_set_port_runs_all_configured_commands(manager, monkeypatch):
     calls = []
     definition = ServiceConfig("demo", "true", set_port=("set {port}", "restart"))

@@ -49,6 +49,9 @@ LocalSM up api --auto-port      # 允许从池里换一个空闲端口
 LocalSM set-port api 9000           # 改端口并按服务定义的方式生效
 ```
 
+`up` 只负责「确保它在跑」，不搬家：对着一个已经在跑的服务 `up --port 9000`，LocalSM 会
+报错并让你改用 `restart --port 9000`，而不是返回成功却什么都没做。
+
 `set-port` 命令会执行服务的 `set_port` 命令序列（如果配了），否则等价于按新端口重启。这
 让「改端口」对需要先写配置文件再 reload 的服务也能工作。`set_port` 模板里可以用
 `{current_port}` 引用切换前的端口，方便先连上旧 manager 再让它换端口。
@@ -61,7 +64,7 @@ LocalSM set-port api 9000           # 改端口并按服务定义的方式生效
 | --- | --- |
 | `state` | `running` / `stopped` |
 | `pid` | 进程 id，未运行或未知时为 `null` |
-| `port` | 当前端口 |
+| `port` | 当前端口。日志里报了就用日志的（服务可能没绑到给它的端口），没报就用 LocalSM 分配的那个 |
 | `url` | 访问地址，`url_from_log` 打开时来自日志 |
 | `managed_by` | `detached` / `launchd` / `null` |
 

@@ -14,7 +14,7 @@ from typing import Any
 from . import launchd
 from .config import ServiceConfig, ensure_directories, load_services, state_dir
 from .logs import log_path, parse_actual_port, parse_actual_url, read_log
-from .ports import PortError, allocate_port
+from .ports import PortError, allocate_port, load_ports
 
 
 class ServiceError(RuntimeError):
@@ -106,7 +106,11 @@ class ServiceManager:
         port = parse_actual_port(text)
         url = parse_actual_url(text) if config.url_from_log else None
         if self._pid_alive(pid):
-            return ServiceStatus(name, "running", pid, port, url, text, managed_by="detached")
+            # The log wins, because a service may bind a port other than the one
+            # it was handed. When it says nothing — a silent service, or one
+            # whose stdout is still buffered — the port LocalSM allocated is the
+            # one it is running on, and reporting none would hide our own choice.
+            return ServiceStatus(name, "running", pid, port or load_ports().get(name), url, text, managed_by="detached")
         if pid is not None:
             self._pid_path(name).unlink(missing_ok=True)
         agent = launchd.state(name)
@@ -181,6 +185,17 @@ class ServiceManager:
         config = self._config(name)
         current = self.status(name)
         if current.state == "running":
+            # `up` is idempotent, but an explicit port it cannot honour is a
+            # request, not a no-op: dropping it silently would report success
+            # for a move that never happened. `--auto-port` asks for any free
+            # port, which a running service already satisfies.
+            if requested_port is not None and requested_port != current.port:
+                if current.managed_by == "launchd":
+                    self._reject_port_change_under_launchd(name, requested_port, auto_port)
+                raise ServiceError(
+                    f"{name} is already running on port {current.port}; "
+                    f"use 'LocalSM restart {name} --port {requested_port}' to move it"
+                )
             return current
         if current.managed_by == "launchd":
             self._reject_port_change_under_launchd(name, requested_port, auto_port)
