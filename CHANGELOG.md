@@ -29,6 +29,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- A stopped service no longer advertises the address from its log. The
+  dashboard renders that address as a link with a copy button, and nothing is
+  listening behind it. Its port now reports where the next start would land —
+  the frozen port under launchd, the sticky one otherwise — so the two fields
+  answer the same question: what is true now.
 - `status` reports the port LocalSM allocated when a running service's log does
   not mention one. A service whose stdout is still buffered — including the
   `python3 -m http.server` example `init` writes — appeared to be running on no

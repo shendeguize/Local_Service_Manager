@@ -77,8 +77,8 @@ Each service in `status` carries:
 | --- | --- |
 | `state` | `running` / `stopped` |
 | `pid` | Process id, `null` when not running or unknown |
-| `port` | Current port. The log wins when it reports one, since a service may bind elsewhere; otherwise the port LocalSM allocated |
-| `url` | Address, read from the log when `url_from_log` is on |
+| `port` | Where it is running, or where it would come back once stopped |
+| `url` | Address, set only while running and only when `url_from_log` is on |
 | `managed_by` | `detached` / `launchd` / `null` |
 
 Four things are tried in order:
@@ -92,6 +92,13 @@ Four things are tried in order:
 
 So killing a service by hand shows up in `status` immediately rather than being
 papered over by a leftover pidfile, and stale pidfiles are cleaned up on the way.
+
+Port and address follow one rule: **report what is true now**. A running
+service's port comes from its log, since it may bind somewhere other than where
+it was sent, and from LocalSM's own allocation when the log says nothing. Once
+stopped, the port becomes where the next start would land: the frozen port under
+launchd, the sticky one otherwise. The `url` is dropped when the service stops,
+because the dashboard renders it as a link and nothing is listening behind it.
 
 ## Reading the URL out of the log
 

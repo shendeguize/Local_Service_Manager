@@ -103,14 +103,15 @@ class ServiceManager:
         config = self._config(name)
         pid = self._read_pid(name)
         text = read_log(state_dir(), name)
-        port = parse_actual_port(text)
+        logged_port = parse_actual_port(text)
         url = parse_actual_url(text) if config.url_from_log else None
         if self._pid_alive(pid):
             # The log wins, because a service may bind a port other than the one
             # it was handed. When it says nothing — a silent service, or one
             # whose stdout is still buffered — the port LocalSM allocated is the
             # one it is running on, and reporting none would hide our own choice.
-            return ServiceStatus(name, "running", pid, port or load_ports().get(name), url, text, managed_by="detached")
+            port = logged_port or load_ports().get(name)
+            return ServiceStatus(name, "running", pid, port, url, text, managed_by="detached")
         if pid is not None:
             self._pid_path(name).unlink(missing_ok=True)
         agent = launchd.state(name)
@@ -119,13 +120,24 @@ class ServiceManager:
             # port come from launchd rather than from our own pidfile.
             frozen = launchd.frozen_port(name)
             if agent.pid:
-                return ServiceStatus(name, "running", agent.pid, frozen or port, url, text, managed_by="launchd")
-            return ServiceStatus(name, "stopped", None, frozen or port, url, text, managed_by="launchd")
+                return ServiceStatus(name, "running", agent.pid, frozen or logged_port, url, text, managed_by="launchd")
+            return self._stopped(name, text, frozen, managed_by="launchd")
         if config.status_cmd:
             external = self._external_status(config)
             if external is not None:
                 return external
-        return ServiceStatus(name, "stopped", None, port, url, text)
+        return self._stopped(name, text)
+
+    def _stopped(self, name: str, log: str, port: int | None = None, managed_by: str | None = None) -> ServiceStatus:
+        """A stopped service reports where it would come back, and no address.
+
+        The URL in the log is an invitation to connect — the dashboard renders
+        it as a link with a copy button — and nothing is listening behind it
+        once the service is down. The port is a different claim: it is where
+        the next start lands, which is the frozen port under launchd and
+        otherwise the sticky one, so it stays useful while the service is down.
+        """
+        return ServiceStatus(name, "stopped", None, port or load_ports().get(name), None, log, managed_by=managed_by)
 
     def _external_status(self, config: ServiceConfig) -> ServiceStatus | None:
         try:
