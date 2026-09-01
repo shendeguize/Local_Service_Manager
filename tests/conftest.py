@@ -85,12 +85,14 @@ def stub_subprocess(run):
 
 
 @pytest.fixture(autouse=True)
-def launchctl(monkeypatch):
+def fake_launchctl(monkeypatch):
     """Stand in for launchctl in every test.
 
     Autouse, because `enable` and `disable` otherwise bootstrap real agents into
     the developer's own launchd, and there is no launchctl at all on Linux.
-    Tests that care about a specific reply set `results[verb]`.
+    Tests that care about a specific reply set `results[verb]`. The name is
+    deliberately not `launchctl`, which a test module could shadow with a
+    narrower fixture and silently lose this protection.
     """
     recorder = FakeLaunchctl()
     monkeypatch.setattr(launchd, "subprocess", stub_subprocess(recorder))

@@ -27,9 +27,9 @@ def agents(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def calls(launchctl):
+def calls(fake_launchctl):
     """The shared launchctl recorder, under the name these tests read best with."""
-    return launchctl
+    return fake_launchctl
 
 
 def write_agent(agents: Path, name: str, port: int | None = 8100) -> Path:
