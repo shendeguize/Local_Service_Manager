@@ -25,6 +25,19 @@ def test_hatch_version_is_the_single_project_version_source():
     assert hatch_version == {"path": "src/localsm/__init__.py"}
 
 
+def test_uv_rebuilds_when_the_version_file_changes():
+    """Without this, a bump leaves stale metadata that fails the check above.
+
+    uv decides whether the installed build is current by watching the files in
+    `cache-keys`, which defaults to pyproject.toml alone — and the version is
+    not in pyproject.toml.
+    """
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["uv"]
+    version_path = config["cache-keys"]
+    assert {"file": "src/localsm/__init__.py"} in version_path
+    assert {"file": "pyproject.toml"} in version_path, "setting cache-keys replaces the default"
+
+
 def test_npm_wrapper_version_matches_runtime_version():
     package = json.loads((ROOT / "packages" / "npm" / "package.json").read_text(encoding="utf-8"))
     assert package["version"] == __version__
