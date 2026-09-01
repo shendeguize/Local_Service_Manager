@@ -5,6 +5,45 @@ All notable changes to LocalSM are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-09-01
+
+### Added
+
+- `LocalSM enable <service>` and `LocalSM disable <service>` hand a service to
+  launchd and take it back, so it starts at login and is restarted when it
+  dies. Supervision is opt-in per service; detached remains the default. The
+  port is frozen into the agent at `enable` time, because launchd starts the
+  service with no LocalSM process in attendance to negotiate one.
+- `LocalSM edit` opens a configuration file in `$EDITOR` and reports which
+  services were added, removed, or changed, and which running services need a
+  restart.
+- `LocalSM completion zsh|bash` prints a completion script generated from the
+  parser, so completions cannot drift from the commands. The scripts call
+  `LocalSM completion services` for real service names, meaning a new service
+  needs no regeneration.
+- `LocalSM web --foreground` runs the dashboard in the current terminal.
+- A read-only `GET /api/config` endpoint, and a configuration section in the
+  dashboard showing paths, the port pool, and each service's definition.
+- `docs/zh/` and `docs/en/` now carry a full page set: install, quickstart,
+  configuration, services, launchd, tunnels, remote, web, cli-contract,
+  cli-reference, architecture, and troubleshooting.
+
+### Changed
+
+- The dashboard rejects requests whose `Host` header is not a loopback name,
+  closing the DNS-rebinding path to an API that can start processes. Add names
+  with `LOCALSM_WEB_ALLOWED_HOSTS` when a local hosts alias is needed.
+- The dashboard rebuilds its ServiceManager when `services.yaml` changes on
+  disk, so a config edit shows up on the next refresh without a restart.
+- `status` reports `managed_by` (`detached` or `launchd`) and, for a supervised
+  service, reads its pid and frozen port from `launchctl`.
+- `docs/cli-reference.md` is generated for both languages, and
+  `scripts/check_docs.py` verifies that every `docs/zh/` page has an
+  English counterpart with the same heading structure. Maintainer-facing
+  `docs/releasing.md` is exempt.
+- The READMEs point at the generated CLI reference instead of carrying a
+  hand-maintained command list that drifted.
+
 ## [0.2.0] - 2026-09-01
 
 ### Added
@@ -12,8 +51,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 - `LocalSM init` writes a commented starter configuration and never overwrites
   an existing file.
 - Global `--json` and `--quiet` flags on every command, accepted either before
-  or after the subcommand. `docs/cli-contract.md` documents the output shapes
-  and the exit-code convention.
+  or after the subcommand. The output shapes and the exit-code convention are
+  documented in the CLI contract page.
 
 ### Changed
 

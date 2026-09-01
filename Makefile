@@ -1,7 +1,7 @@
 UV ?= uv
 LOCALSM ?= ./LocalSM
 
-.PHONY: install lint test test-js docs hygiene cov check build package-npm release-preflight smoke doctor web clean
+.PHONY: install lint test test-js docs docs-cli hygiene cov check build package-npm release-preflight smoke doctor web clean
 
 install:
 	$(UV) tool install --editable . --force
@@ -19,6 +19,10 @@ test-js:
 
 docs:
 	$(UV) run python scripts/check_docs.py
+	$(UV) run python scripts/gen_cli_reference.py --check
+
+docs-cli:
+	$(UV) run python scripts/gen_cli_reference.py
 
 hygiene:
 	$(UV) run python scripts/check_repo_hygiene.py

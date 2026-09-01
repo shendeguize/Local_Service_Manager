@@ -27,6 +27,9 @@ def localsm_home(tmp_path, monkeypatch):
     """
     monkeypatch.setenv("LOCALSM_CONFIG_DIR", str(tmp_path))
     monkeypatch.setenv("LOCALSM_STATE_DIR", str(tmp_path))
+    # Also redirect launchd agents, so no test can write to or read from the
+    # developer's real ~/Library/LaunchAgents.
+    monkeypatch.setenv("LOCALSM_AGENTS_DIR", str(tmp_path / "LaunchAgents"))
     return tmp_path
 
 

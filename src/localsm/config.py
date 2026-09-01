@@ -46,6 +46,17 @@ def state_dir() -> Path:
     return (_env_path("XDG_STATE_HOME") or Path.home() / ".local" / "state") / "localsm"
 
 
+def agents_dir() -> Path:
+    """Directory holding LocalSM's launchd agents."""
+    override = _env_path("LOCALSM_AGENTS_DIR")
+    if override is not None:
+        return override
+    root = project_root()
+    if root is not None:
+        return root / "LaunchAgents"
+    return Path.home() / "Library" / "LaunchAgents"
+
+
 def services_file() -> Path:
     return config_dir() / "services.yaml"
 

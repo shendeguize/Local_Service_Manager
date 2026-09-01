@@ -11,6 +11,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from . import launchd
 from .config import ServiceConfig, ensure_directories, load_services, state_dir
 from .logs import log_path, parse_actual_port, parse_actual_url, read_log
 from .ports import PortError, allocate_port
@@ -29,6 +30,7 @@ class ServiceStatus:
     url: str | None = None
     log: str = ""
     error: str | None = None
+    managed_by: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -104,9 +106,17 @@ class ServiceManager:
         port = parse_actual_port(text)
         url = parse_actual_url(text) if config.url_from_log else None
         if self._pid_alive(pid):
-            return ServiceStatus(name, "running", pid, port, url, text)
+            return ServiceStatus(name, "running", pid, port, url, text, managed_by="detached")
         if pid is not None:
             self._pid_path(name).unlink(missing_ok=True)
+        agent = launchd.state(name)
+        if agent.enabled:
+            # launchd started this service without us, so its pid and frozen
+            # port come from launchd rather than from our own pidfile.
+            frozen = launchd.frozen_port(name)
+            if agent.pid:
+                return ServiceStatus(name, "running", agent.pid, frozen or port, url, text, managed_by="launchd")
+            return ServiceStatus(name, "stopped", None, frozen or port, url, text, managed_by="launchd")
         if config.status_cmd:
             external = self._external_status(config)
             if external is not None:
@@ -118,7 +128,7 @@ class ServiceManager:
             result = subprocess.run(
                 config.status_cmd or "",
                 shell=True,
-                executable=os.environ.get("SHELL", "/bin/zsh"),
+                executable=self._shell(),
                 cwd=self._working_dir(config),
                 capture_output=True,
                 text=True,
@@ -143,21 +153,41 @@ class ServiceManager:
     def all_status(self) -> list[ServiceStatus]:
         return [self.status(name) for name in sorted(self.services)]
 
+    def _shell(self) -> str:
+        return os.environ.get("SHELL", "/bin/zsh")
+
+    def allocate_service_port(self, name: str, requested: int | None = None, auto: bool = False) -> int:
+        config = self._config(name)
+        try:
+            return allocate_port(
+                name,
+                config.preferred_port,
+                config.port_range or self.port_pool,
+                requested=requested,
+                auto=auto,
+            )
+        except PortError as exc:
+            raise ServiceError(str(exc)) from exc
+
+    def _reject_port_change_under_launchd(self, name: str, requested_port: int | None, auto_port: bool) -> None:
+        if requested_port is None and not auto_port:
+            return
+        raise ServiceError(
+            f"{name} is managed by launchd and its port is frozen in the agent; "
+            f"use 'LocalSM enable {name} --port PORT' or 'LocalSM disable {name}' first"
+        )
+
     def up(self, name: str, requested_port: int | None = None, auto_port: bool = False) -> ServiceStatus:
         config = self._config(name)
         current = self.status(name)
         if current.state == "running":
             return current
-        try:
-            port = allocate_port(
-                name,
-                config.preferred_port,
-                config.port_range or self.port_pool,
-                requested=requested_port,
-                auto=auto_port,
-            )
-        except PortError as exc:
-            raise ServiceError(str(exc)) from exc
+        if current.managed_by == "launchd":
+            self._reject_port_change_under_launchd(name, requested_port, auto_port)
+            launchd.kickstart(name)
+            time.sleep(0.3)
+            return self.status(name)
+        port = self.allocate_service_port(name, requested=requested_port, auto=auto_port)
         command = self._render(config.start, port)
         path = log_path(state_dir(), name)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -169,7 +199,7 @@ class ServiceManager:
             process = subprocess.Popen(
                 command,
                 shell=True,
-                executable=os.environ.get("SHELL", "/bin/zsh"),
+                executable=self._shell(),
                 cwd=self._working_dir(config),
                 env=env,
                 stdin=subprocess.DEVNULL,
@@ -198,6 +228,11 @@ class ServiceManager:
 
     def down(self, name: str) -> ServiceStatus:
         config = self._config(name)
+        if launchd.is_enabled(name):
+            raise ServiceError(
+                f"{name} is managed by launchd, which would restart it immediately; "
+                f"run 'LocalSM disable {name}' to stop it"
+            )
         pid = self._read_pid(name)
         if self._pid_alive(pid):
             try:
@@ -218,13 +253,64 @@ class ServiceManager:
         return self.status(name)
 
     def restart(self, name: str, requested_port: int | None = None, auto_port: bool = False) -> ServiceStatus:
+        if launchd.is_enabled(name):
+            self._reject_port_change_under_launchd(name, requested_port, auto_port)
+            launchd.kickstart(name, restart=True)
+            time.sleep(0.3)
+            return self.status(name)
         self.down(name)
         return self.up(name, requested_port=requested_port, auto_port=auto_port)
+
+    def enable(self, name: str, requested_port: int | None = None) -> dict[str, Any]:
+        """Hand a service over to launchd, freezing its port into the agent."""
+        config = self._config(name)
+        if not launchd.is_enabled(name) and self._pid_alive(self._read_pid(name)):
+            # launchd cannot bind a port our own detached process still holds.
+            self.down(name)
+        port = self.allocate_service_port(name, requested=requested_port)
+        path = launchd.write_plist(
+            name,
+            self._render(config.start, port),
+            shell=self._shell(),
+            log_file=log_path(state_dir(), name),
+            port=port,
+            working_dir=self._working_dir(config),
+            env=dict(config.env) if config.env else None,
+        )
+        # Replace any previous generation so the new plist actually takes hold.
+        launchd.bootout(name)
+        launchd.bootstrap(name)
+        time.sleep(0.3)
+        return {
+            "name": name,
+            "enabled": True,
+            "label": launchd.label_for(name),
+            "plist": str(path),
+            "port": port,
+            "status": self.status(name).as_dict(),
+        }
+
+    def disable(self, name: str) -> dict[str, Any]:
+        self._config(name)
+        was_enabled = launchd.is_enabled(name)
+        launchd.bootout(name)
+        launchd.remove_plist(name)
+        return {
+            "name": name,
+            "enabled": False,
+            "label": launchd.label_for(name),
+            "was_enabled": was_enabled,
+            "status": self.status(name).as_dict(),
+        }
 
     def set_port(self, name: str, port: int) -> ServiceStatus | None:
         config = self._config(name)
         if not 1 <= port <= 65535:
             raise ServiceError("port must be between 1 and 65535")
+        if launchd.is_enabled(name):
+            # The plist carries the frozen port, so rewrite and reload it.
+            self.enable(name, requested_port=port)
+            return self.status(name)
         if config.set_port:
             current_port = self.status(name).port or config.preferred_port
             for command in config.set_port:
@@ -250,7 +336,7 @@ class ServiceManager:
         result = subprocess.run(
             command,
             shell=True,
-            executable=os.environ.get("SHELL", "/bin/zsh"),
+            executable=self._shell(),
             cwd=self._working_dir(config),
             check=False,
         )

@@ -39,7 +39,7 @@ LocalSM up
 
 ## 配置与状态定位
 
-路径由 [`config.py`](../src/localsm/config.py) 的惰性函数解析，与 LocalSM
+路径由 [`config.py`](../../src/localsm/config.py) 的惰性函数解析，与 LocalSM
 自身的安装位置无关：配置默认在 `~/.config/localsm/`，状态在
 `~/.local/state/localsm/`，均可用 `LOCALSM_CONFIG_DIR`、`LOCALSM_STATE_DIR`、
 `LOCALSM_ROOT` 或 XDG 变量覆盖。惰性解析意味着进程内改环境变量即时生效，

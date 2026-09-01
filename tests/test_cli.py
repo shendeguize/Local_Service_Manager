@@ -48,6 +48,31 @@ class StubManager:
         self.calls.append(("logs", name, lines))
         return "line one\nline two\n"
 
+    def enable(self, name, requested_port=None):
+        self.calls.append(("enable", name, requested_port))
+        return {
+            "name": name,
+            "enabled": True,
+            "label": f"com.localsm.{name}",
+            "plist": f"/agents/com.localsm.{name}.plist",
+            "port": requested_port or 8000,
+            "status": self._status(name).as_dict(),
+        }
+
+    def disable(self, name, was_enabled=True):
+        self.calls.append(("disable", name))
+        return {
+            "name": name,
+            "enabled": False,
+            "label": f"com.localsm.{name}",
+            "was_enabled": was_enabled,
+            "status": self._status(name, "stopped").as_dict(),
+        }
+
+    def allocate_service_port(self, name, requested=None, auto=False):
+        self.calls.append(("allocate", name, requested, auto))
+        return 8765
+
 
 class StubTunnels:
     def __init__(self):
@@ -155,6 +180,97 @@ def test_configured_run_is_quiet_about_setup(sample_config, stub_manager, capsys
 def test_init_does_not_warn_about_missing_configuration(localsm_home, capsys):
     _, _, err = run(["init"], capsys)
     assert err == ""
+
+
+def write_services(home, body):
+    (home / "services.yaml").write_text(f"port_pool: [18300, 18310]\nservices:\n{body}", encoding="utf-8")
+
+
+@pytest.fixture
+def fake_editor(monkeypatch):
+    """Replace the editor with a callable that rewrites the file in place."""
+    rewrites = {}
+
+    def edit(path):
+        if rewrites:
+            path.write_text(rewrites["content"], encoding="utf-8")
+
+    monkeypatch.setattr(cli, "open_in_editor", edit)
+    return rewrites
+
+
+def test_edit_reports_no_change(sample_config, fake_editor, capsys):
+    code, out, _ = run(["edit"], capsys)
+    assert code == 0
+    assert "no service definitions changed" in out
+
+
+def test_edit_scaffolds_a_missing_configuration(localsm_home, fake_editor, capsys):
+    code, out, _ = run(["edit"], capsys)
+    assert code == 0
+    assert (localsm_home / "services.yaml").exists()
+    assert str(localsm_home / "services.yaml") in out
+
+
+def test_edit_reports_added_and_removed_services(sample_config, fake_editor, capsys):
+    fake_editor["content"] = 'port_pool: [18300, 18310]\nservices:\n  fresh:\n    start: "true"\n'
+    code, out, _ = run(["edit"], capsys)
+    assert code == 0
+    assert "added: fresh" in out
+    assert "removed: web" in out
+
+
+def test_edit_names_the_services_needing_a_restart(sample_config, fake_editor, monkeypatch, capsys):
+    fake_editor["content"] = 'port_pool: [18300, 18310]\nservices:\n  web:\n    start: "true --changed"\n'
+    monkeypatch.setattr(
+        "localsm.services.ServiceManager.status",
+        lambda self, name: ServiceStatus(name, "running", pid=11, port=8000),
+    )
+    code, out, _ = run(["edit"], capsys)
+    assert code == 0
+    assert "changed: web" in out
+    assert "restart to apply: LocalSM restart web" in out
+
+
+def test_edit_stays_quiet_about_stopped_changed_services(sample_config, fake_editor, capsys):
+    fake_editor["content"] = 'port_pool: [18300, 18310]\nservices:\n  web:\n    start: "true --changed"\n'
+    code, out, _ = run(["edit"], capsys)
+    assert code == 0
+    assert "changed: web" in out
+    assert "restart to apply" not in out
+
+
+def test_edit_json_lists_the_differences(sample_config, fake_editor, capsys):
+    fake_editor["content"] = 'port_pool: [18300, 18310]\nservices:\n  fresh:\n    start: "true"\n'
+    code, out, _ = run(["--json", "edit"], capsys)
+    assert code == 0
+    payload = json.loads(out)
+    assert payload["added"] == ["fresh"]
+    assert payload["removed"] == ["web"]
+    assert payload["restart_required"] == []
+
+
+def test_edit_can_target_tunnels(sample_config, fake_editor, capsys):
+    code, out, _ = run(["edit", "tunnels"], capsys)
+    assert code == 0
+    assert "tunnels.yaml" in out
+
+
+def test_edit_surfaces_invalid_yaml(sample_config, fake_editor, capsys):
+    fake_editor["content"] = "services: [not, a, mapping]\n"
+    code, _, err = run(["edit"], capsys)
+    assert code == 1
+    assert "LocalSM error" in err
+
+
+def test_editor_failures_exit_with_one(sample_config, monkeypatch, capsys):
+    def fail(path):
+        raise cli.EditorError("vi exited with code 1")
+
+    monkeypatch.setattr(cli, "open_in_editor", fail)
+    code, _, err = run(["edit"], capsys)
+    assert code == 1
+    assert "LocalSM error: vi exited" in err
 
 
 def test_config_command_reports_paths(sample_config, capsys):
@@ -297,6 +413,117 @@ def test_web_starts_the_dashboard_service(sample_config, stub_manager, capsys):
     assert code == 0
     assert out.startswith("web ")
     assert StubManager.instance.calls == [("up", "web", None, False)]
+
+
+def test_web_foreground_runs_in_place(sample_config, stub_manager, monkeypatch, capsys):
+    served = []
+
+    class FakeApp:
+        def run(self, host, port, debug, use_reloader):
+            served.append((host, port, debug, use_reloader))
+
+    monkeypatch.setattr("localsm.web.create_app", lambda: FakeApp())
+    monkeypatch.setattr(StubManager, "status", lambda self, name: self._status(name, "stopped"))
+    code, out, _ = run(["web", "--foreground"], capsys)
+    assert code == 0
+    assert served == [("127.0.0.1", 8765, False, False)]
+    assert "web foreground port=8765" in out
+    assert "http://127.0.0.1:8765/" in out
+
+
+def test_web_foreground_refuses_when_already_running(sample_config, stub_manager, monkeypatch, capsys):
+    monkeypatch.setattr("localsm.web.create_app", lambda: None)
+    code, _, err = run(["web", "--foreground"], capsys)
+    assert code == 1
+    assert "already running" in err
+
+
+def test_web_foreground_stops_cleanly_on_interrupt(sample_config, stub_manager, monkeypatch, capsys):
+    class Interrupting:
+        def run(self, host, port, debug, use_reloader):
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr("localsm.web.create_app", lambda: Interrupting())
+    monkeypatch.setattr(StubManager, "status", lambda self, name: self._status(name, "stopped"))
+    code, _, _ = run(["web", "--foreground"], capsys)
+    assert code == 0
+
+
+def test_enable_reports_the_frozen_port_and_plist(sample_config, stub_manager, capsys):
+    code, out, _ = run(["enable", "demo", "--port", "9300"], capsys)
+    assert code == 0
+    assert "enabled com.localsm.demo on port 9300" in out
+    assert "plist /agents/com.localsm.demo.plist" in out
+    assert StubManager.instance.calls == [("enable", "demo", 9300)]
+
+
+def test_enable_json_carries_the_report(sample_config, stub_manager, capsys):
+    code, out, _ = run(["--json", "enable", "demo"], capsys)
+    assert code == 0
+    payload = json.loads(out)
+    assert payload["enabled"] is True
+    assert payload["port"] == 8000
+    assert payload["status"]["name"] == "demo"
+
+
+def test_disable_reports_the_removal(sample_config, stub_manager, capsys):
+    code, out, _ = run(["disable", "demo"], capsys)
+    assert code == 0
+    assert "disabled com.localsm.demo" in out
+
+
+def test_disable_says_so_when_nothing_was_enabled(sample_config, stub_manager, monkeypatch, capsys):
+    original = StubManager.disable
+    monkeypatch.setattr(StubManager, "disable", lambda self, name: original(self, name, was_enabled=False))
+    code, out, _ = run(["disable", "demo"], capsys)
+    assert code == 0
+    assert "already not managed by launchd" in out
+
+
+def test_launchd_errors_exit_with_one(sample_config, monkeypatch, capsys):
+    class FailingManager:
+        services = {"demo": object()}
+
+        def enable(self, name, requested_port=None):
+            raise cli.LaunchdError("cannot load com.localsm.demo")
+
+    monkeypatch.setattr(cli, "ServiceManager", FailingManager)
+    code, _, err = run(["enable", "demo"], capsys)
+    assert code == 1
+    assert "LocalSM error: cannot load" in err
+
+
+@pytest.mark.parametrize("shell", ["zsh", "bash"])
+def test_completion_prints_a_script(localsm_home, capsys, shell):
+    code, out, _ = run(["completion", shell], capsys)
+    assert code == 0
+    assert "LocalSM" in out
+    assert "completion services" in out
+
+
+def test_completion_services_lists_configured_names(sample_config, capsys):
+    code, out, _ = run(["completion", "services"], capsys)
+    assert code == 0
+    assert out == "web\n"
+
+
+def test_completion_services_stays_silent_without_configuration(localsm_home, capsys):
+    code, out, err = run(["completion", "services"], capsys)
+    assert code == 0
+    assert out == ""
+    assert err == ""
+
+
+def test_completion_services_survives_invalid_configuration(localsm_home, capsys):
+    (localsm_home / "services.yaml").write_text("services: [broken]\n", encoding="utf-8")
+    code, out, _ = run(["completion", "services"], capsys)
+    assert code == 0
+    assert out == ""
+
+
+def test_status_line_marks_launchd_managed_services():
+    line = cli._status_line({"name": "demo", "state": "running", "pid": 7, "port": 8000, "managed_by": "launchd"})
+    assert line == "demo running pid=7 port=8000 launchd"
 
 
 def test_doctor_command_delegates(monkeypatch):

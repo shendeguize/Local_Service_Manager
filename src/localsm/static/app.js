@@ -1,4 +1,4 @@
-import { api } from "./api.js";
+import { createConfigPanel } from "./config.js";
 import { createRemotePanel } from "./remote.js";
 import { createServicesPanel } from "./services.js";
 import { createTunnelsPanel } from "./tunnels.js";
@@ -34,6 +34,10 @@ async function loadTunnels(panel) {
   updateMetrics();
 }
 
+async function loadConfig(panel) {
+  try { await panel.refresh(); } catch { /* the panel already reported it */ }
+}
+
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem("localsm-theme", theme);
@@ -56,6 +60,7 @@ async function refreshAll(panels, { notify = false } = {}) {
     loadServices(panels.services),
     loadRemote(panels.remote),
     loadTunnels(panels.tunnels),
+    loadConfig(panels.config),
   ]);
   if (notify && results.every((result) => result.status === "fulfilled")) showToast("数据已刷新", "服务、远端和隧道状态已同步");
 }
@@ -83,6 +88,10 @@ function setup() {
       addButton: document.querySelector("#add-tunnel"),
       ensureButton: document.querySelector("#ensure-tunnels"),
       onChanged: (rows) => { if (rows) state.tunnels = rows; updateMetrics(); },
+    }),
+    config: createConfigPanel({
+      root: document.querySelector("#config-body"),
+      meta: document.querySelector("#config-meta"),
     }),
   };
   document.querySelector("#refresh-all").addEventListener("click", () => refreshAll(panels, { notify: true }));
